@@ -1,0 +1,11 @@
+## Interface: 11200
+## Title: OctoRaidCost
+## Notes: Auction prices for Chronicle raid consumable cost analysis. Requires Nampower.
+## Author: Timeless
+## Version: 0.5.0
+## OptionalDeps: aux-addon
+## SavedVariables: OctoRaidCostDB
+Catalog.lua
+OctoRaidCost.lua
+Export.lua
+UI.lua

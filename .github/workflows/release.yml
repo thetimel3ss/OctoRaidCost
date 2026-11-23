@@ -1,0 +1,32 @@
+name: Package addon
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(sed -n 's/^## Version: //p' OctoRaidCost.toc | tr -d '\r')
+          test "$TAG" = "v$version"
+      - name: Package installation folder
+        run: |
+          mkdir -p package/OctoRaidCost
+          cp Catalog.lua OctoRaidCost.lua Export.lua UI.lua OctoRaidCost.toc README.md CHANGELOG.md package/OctoRaidCost/
+          cd package
+          zip -r ../OctoRaidCost.zip OctoRaidCost
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          printf '%s\n' 'Extract the OctoRaidCost folder into Interface/AddOns and restart WoW. Nampower is required.' '' 'Analyzer: https://thetimel3ss.github.io/OctoRaidCost/' '' 'No Python installation is required. See CHANGELOG.md for changes.' > release-notes.txt
+          gh release create "$TAG" OctoRaidCost.zip --title "OctoRaidCost $TAG" --notes-file release-notes.txt

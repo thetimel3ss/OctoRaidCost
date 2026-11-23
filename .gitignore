@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+
+# Local documentation, development tools and tests
+/docs/
+
+# Generated publication artifacts
+/_site/
+/package/
+/*.zip

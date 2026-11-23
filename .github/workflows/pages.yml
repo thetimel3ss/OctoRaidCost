@@ -1,0 +1,51 @@
+name: Publish analyzer
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check JavaScript and shared data
+        run: |
+          for file in analyzer/*.js; do node --check "$file"; done
+          node - <<'JS'
+          const fs=require('node:fs'),assert=require('node:assert/strict');
+          const shared=require('./analyzer/shared-data.js');
+          const data=shared.catalog(...['Catalog.lua','Recipes.lua','ItemNames.lua'].map(n=>fs.readFileSync(n,'utf8')));
+          assert(Object.keys(data.items).length>0);
+          for(const [id,recipe]of Object.entries(data.recipes)){
+            assert(data.items[id]);
+            for(const route of recipe.routes||[recipe]){
+              assert(route.yield>0);
+              for(const part of route.ingredients)assert(data.items[part.item]&&part.quantity>0);
+            }
+          }
+          JS
+      - uses: actions/configure-pages@v5
+      - name: Prepare public files
+        run: |
+          mkdir -p _site/analyzer
+          cp index.html .nojekyll Catalog.lua Recipes.lua ItemNames.lua _site/
+          cp analyzer/*.js analyzer/*.html analyzer/*.css _site/analyzer/
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
