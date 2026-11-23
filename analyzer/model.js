@@ -1,12 +1,21 @@
 'use strict';
 /* Pure pricing/filter logic, shared by the UI and regression tests. */
 const ORC = (()=>{
- const free=r=>r.free||/conjured|healthstone|soulstone|spellstone|felstone|^mana ruby$/i.test(r.name||'');
+ const free=r=>r.free||/conjured|healthstone|soulstone|spellstone|felstone|^mana (?:ruby|citrine)$/i.test(r.name||'');
+ const ignoredItems={
+  19974:'Boss-summoning lure; not a player consumable',
+  60770:'Companion collection item; not a raid consumable',
+  61183:'Permanent armor modification; excluded from raid spending',
+  15564:'Permanent armor modification; excluded from raid spending',
+  92000:'Cosmetic transformation; excluded from raid spending',
+  7762:'Cosmetic illusion; excluded from raid spending'
+ };
  function trackingPolicy(row){
+  if(ignoredItems[row.item])return {only:true,ignored:true,label:'Ignored actions',reason:ignoredItems[row.item]};
   const names=[row.name||'',...(row.evidence||[]).map(e=>e.spell||'')];
+  if(names.some(n=>/^add companion to collection[.!]?$/i.test(n)))return {only:true,ignored:true,label:'Ignored actions',reason:'Companion collection action; not a raid consumable'};
   if(names.some(n=>/^innervate(?:\s*\(rank \d+\))?$/i.test(n)))return {only:true,label:'Class abilities',reason:'Class ability; no purchased consumable cost'};
   if(names.some(n=>/^add toy to collection[.!]?$/i.test(n)))return {only:true,label:'Collection actions',reason:'Collection action; not a raid consumable'};
-  if(names.some(n=>/^(?:instant|deadly|crippling|mind[- ]numbing|wound|dissolvent) poison(?:\s+(?:[ivx]+|\d+))?$/i.test(n)))return {only:true,label:'Rogue poisons',reason:'Poison applications tracked separately; excluded from spending by policy'};
   if(free(row))return {only:true,label:'Conjured and class items',reason:'Conjured/class item; no market cost'};
   return {only:false};
  }
@@ -98,7 +107,7 @@ const ORC = (()=>{
   const rows=all.filter(r=>ps.includes(r.player)&&matches(r,raid,filters));
   const eligible=rows.filter(r=>r.status==='observed'||r.status==='reviewed'||r.status==='inferred'&&r.eligible);
   const costs=eligible.filter(r=>!trackingPolicy(r).only);
-  const usage=rows.filter(r=>trackingPolicy(r).only&&(eligible.includes(r)||(r.status!=='excluded'&&r.timestamp&&(r.evidence||[]).some(e=>e.kind===1||e.kind===2))));
+  const usage=rows.filter(r=>trackingPolicy(r).only&&!trackingPolicy(r).ignored&&(eligible.includes(r)||(r.status!=='excluded'&&r.timestamp&&(r.evidence||[]).some(e=>e.kind===1||e.kind===2))));
   const totals=ps.map(player=>{
    const rs=costs.filter(r=>r.player===player);let observed=0,estimated=0,missing=0,uses=0;
    for(const r of rs){const q=perUse(r,ctx);if(q.value===null){missing+=r.quantity;continue;}uses+=r.quantity;

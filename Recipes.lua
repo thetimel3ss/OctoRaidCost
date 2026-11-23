@@ -1,5 +1,311 @@
 -- Shared data for the addon and analyzer. Use literal tables only.
 OctoRaidCostRecipes = {
+  [42131] = {
+    ["name"] = "Aromatic Berries",
+    ["yield"] = 1,
+    ["label"] = "Survival craft",
+    ["ingredients"] = { {
+      ["item"] = 51714,
+      ["quantity"] = 1,
+    }, {
+      ["item"] = 42005,
+      ["quantity"] = 1,
+    }, {
+      ["item"] = 3713,
+      ["quantity"] = 2,
+    } },
+  },
+  [2892] = {
+    ["name"] = "Deadly Poison",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 5173,
+      ["quantity"] = 1,
+    }, {
+      ["item"] = 3372,
+      ["quantity"] = 1,
+    } },
+  },
+  [2893] = {
+    ["name"] = "Deadly Poison II",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 5173,
+      ["quantity"] = 2,
+    }, {
+      ["item"] = 3372,
+      ["quantity"] = 1,
+    } },
+  },
+  [3775] = {
+    ["name"] = "Crippling Poison",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 2930,
+      ["quantity"] = 1,
+    }, {
+      ["item"] = 3371,
+      ["quantity"] = 1,
+    } },
+  },
+  [3776] = {
+    ["name"] = "Crippling Poison II",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 8923,
+      ["quantity"] = 3,
+    }, {
+      ["item"] = 8925,
+      ["quantity"] = 1,
+    } },
+  },
+  [5237] = {
+    ["name"] = "Mind-numbing Poison",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 2928,
+      ["quantity"] = 1,
+    }, {
+      ["item"] = 2930,
+      ["quantity"] = 1,
+    }, {
+      ["item"] = 3371,
+      ["quantity"] = 1,
+    } },
+  },
+  [6947] = {
+    ["name"] = "Instant Poison",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 2928,
+      ["quantity"] = 1,
+    }, {
+      ["item"] = 3371,
+      ["quantity"] = 1,
+    } },
+  },
+  [6949] = {
+    ["name"] = "Instant Poison II",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 2928,
+      ["quantity"] = 3,
+    }, {
+      ["item"] = 3372,
+      ["quantity"] = 1,
+    } },
+  },
+  [6950] = {
+    ["name"] = "Instant Poison III",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 8924,
+      ["quantity"] = 1,
+    }, {
+      ["item"] = 3372,
+      ["quantity"] = 1,
+    } },
+  },
+  [6951] = {
+    ["name"] = "Mind-numbing Poison II",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 2928,
+      ["quantity"] = 4,
+    }, {
+      ["item"] = 2930,
+      ["quantity"] = 4,
+    }, {
+      ["item"] = 3372,
+      ["quantity"] = 1,
+    } },
+  },
+  [8926] = {
+    ["name"] = "Instant Poison IV",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 8924,
+      ["quantity"] = 2,
+    }, {
+      ["item"] = 8925,
+      ["quantity"] = 1,
+    } },
+  },
+  [8927] = {
+    ["name"] = "Instant Poison V",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 8924,
+      ["quantity"] = 3,
+    }, {
+      ["item"] = 8925,
+      ["quantity"] = 1,
+    } },
+  },
+  [8928] = {
+    ["name"] = "Instant Poison VI",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 8924,
+      ["quantity"] = 4,
+    }, {
+      ["item"] = 8925,
+      ["quantity"] = 1,
+    } },
+  },
+  [8984] = {
+    ["name"] = "Deadly Poison III",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 5173,
+      ["quantity"] = 3,
+    }, {
+      ["item"] = 8925,
+      ["quantity"] = 1,
+    } },
+  },
+  [8985] = {
+    ["name"] = "Deadly Poison IV",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 5173,
+      ["quantity"] = 5,
+    }, {
+      ["item"] = 8925,
+      ["quantity"] = 1,
+    } },
+  },
+  [9186] = {
+    ["name"] = "Mind-numbing Poison III",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 8924,
+      ["quantity"] = 2,
+    }, {
+      ["item"] = 8923,
+      ["quantity"] = 2,
+    }, {
+      ["item"] = 8925,
+      ["quantity"] = 1,
+    } },
+  },
+  [10918] = {
+    ["name"] = "Wound Poison",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 2930,
+      ["quantity"] = 1,
+    }, {
+      ["item"] = 5173,
+      ["quantity"] = 1,
+    }, {
+      ["item"] = 3372,
+      ["quantity"] = 1,
+    } },
+  },
+  [10920] = {
+    ["name"] = "Wound Poison II",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 2930,
+      ["quantity"] = 1,
+    }, {
+      ["item"] = 5173,
+      ["quantity"] = 2,
+    }, {
+      ["item"] = 3372,
+      ["quantity"] = 1,
+    } },
+  },
+  [10921] = {
+    ["name"] = "Wound Poison III",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 8923,
+      ["quantity"] = 1,
+    }, {
+      ["item"] = 5173,
+      ["quantity"] = 2,
+    }, {
+      ["item"] = 8925,
+      ["quantity"] = 1,
+    } },
+  },
+  [10922] = {
+    ["name"] = "Wound Poison IV",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 8923,
+      ["quantity"] = 2,
+    }, {
+      ["item"] = 5173,
+      ["quantity"] = 2,
+    }, {
+      ["item"] = 8925,
+      ["quantity"] = 1,
+    } },
+  },
+  [20844] = {
+    ["name"] = "Deadly Poison V",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 5173,
+      ["quantity"] = 7,
+    }, {
+      ["item"] = 8925,
+      ["quantity"] = 1,
+    } },
+  },
+  [54009] = {
+    ["name"] = "Dissolvent Poison",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 8924,
+      ["quantity"] = 2,
+    }, {
+      ["item"] = 2931,
+      ["quantity"] = 3,
+    }, {
+      ["item"] = 8925,
+      ["quantity"] = 1,
+    } },
+  },
+  [54010] = {
+    ["name"] = "Dissolvent Poison II",
+    ["yield"] = 1,
+    ["label"] = "NPC reagents (base crafting cost)",
+    ["ingredients"] = { {
+      ["item"] = 8924,
+      ["quantity"] = 3,
+    }, {
+      ["item"] = 2931,
+      ["quantity"] = 4,
+    }, {
+      ["item"] = 8925,
+      ["quantity"] = 1,
+    } },
+  },
   [11564] = {
     ["name"] = "Crystal Ward",
     ["yield"] = 6,

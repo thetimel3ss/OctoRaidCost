@@ -1,5 +1,22 @@
 # Changelog
 
+## 0.7.0 — 2026-11-23
+
+- Ignored Dragon-Shaped Cookie cosmetic illusion observations in spending, usage summaries and review queues.
+- Added Mana Citrine, all 15 Healthstone variants and Felstone as free class items excluded from AH searches.
+- Added Sprouted Frond with a zero quest-reward valuation, retained quantities and manual price support.
+- Added Aromatic Berries and its Survival recipe, with missing tradeable ingredients included in AH searches.
+- Ignored Mudskunk Lure, companion collection actions, permanent armor kits and Tinyhoof's cosmetic balm in spending, usage summaries and review queues while retaining their evidence.
+- Added all 22 ranks across Instant, Deadly, Wound, Crippling, Mind-numbing and Dissolvent poisons, with nine NPC-priced reagents and crafting recipes.
+- Counted eligible poison applications in consumable spending, replacing the blanket poison exclusion; weapon proc charges do not divide dose prices.
+- Excluded the supported poisons and NPC reagents from AH searches and normalized vial package prices to unit prices.
+- Assigned zero harvest valuations to Whipper Root Tuber and Night Dragon's Breath while retaining use counts and manual price overrides.
+- Added Hi-Explosive Bomb, Lesser Wizard Oil, Smoked Sagefish, Superior Mana Potion, Major Rejuvenation Potion, Tender Wolf Steak, Superior Healing Potion and Squid Eel Skewer to AH searches.
+- Priced Lesser Wizard Oil per application using five applications per item.
+- Added Whipper Root Tuber and Night Dragon's Breath as BoP consumables excluded from AH searches, retaining quantities and manual price support.
+- Added Juicy Kezan Fruitcake, Lovely Apple and Delicious Birthday Cake as named candidates for the shared recovery effect, preserving ambiguous-use review.
+- Excluded all three BoP items from AH searches; added the Kezan Fruitcake base vendor price and zero quest/gift valuations for the other two.
+
 ## 0.6.1 — 2026-11-23
 
 - Corrected Simple Slingshot classification: each eligible use consumes one unit and contributes its quoted price to spending.
