@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.6.1 — 2026-11-23
+
+- Corrected Simple Slingshot classification: each eligible use consumes one unit and contributes its quoted price to spending.
+
 ## 0.6.0 — 2026-11-23
 
 - Removed Conjured Crystal Water from AH searches and marked it as a free conjured item.
