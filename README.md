@@ -143,3 +143,9 @@ If reset reports a file-writing failure, fix the problem and run `/orc reset` ag
 | Prices show **Unknown** | Check quotation coverage and ingredients; rescan or enter a manual price. |
 | A player shows zero spending | Check active filters, the direct/estimated display setting and missing prices. |
 | Window position needs restoring | `/orc reset` restores it, but also clears the addon's stored prices and TXT exports. |
+
+## Navigate the analyzer
+
+Use **Overview** for raid totals, player rankings and spending composition. Open **Players** for individual reports and PDF/TXT exports, **Prices** for quotations and manual prices, **Evidence** for ambiguous uses, and **History** for saved reports and backups. Filters and general exports remain available under **Filters & exports**.
+
+NPC prices use base prices before reputation discounts. Enriched Manna Biscuit is valued at 12 silver each (five for 60 silver). Stratholme Holy Water uses a zero loot valuation; its uses remain counted. Mana Ruby and Simple Slingshot activations appear separately from consumable spending. Update the addon and run a new AH scan to collect prices for newly added tradeable items.

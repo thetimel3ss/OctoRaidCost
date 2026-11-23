@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.6.0 — 2026-11-23
+
+- Removed Conjured Crystal Water from AH searches and marked it as a free conjured item.
+- Added Ez-Thro Dynamite and Ez-Thro Dynamite II, all six Survival healing salves and Solid Weightstone to AH searches.
+- Added a visible Chronicle attribution link.
+- Redesigned the analyzer with Overview, Players, Prices, Evidence and History navigation, spending cards, rankings and category breakdowns.
+- Added missing potions, elixirs, Merlot and all six standard scroll families at ranks I–IV to AH searches.
+- Added Enriched Manna Biscuit at its base vendor price of 12 silver per biscuit (five for 60 silver).
+- Included Simple Slingshot in AH searches while keeping tool activations outside consumable spending.
+- Tracked Mana Ruby and Simple Slingshot activations separately from purchased consumables.
+- Removed Stratholme Holy Water from AH searches and assigned a zero loot valuation while retaining usage counts.
+
 ## 0.5.0 — 2026-11-23
 
 - Published a browser-only analyzer with direct Chronicle downloads, gzip/protobuf decoding and classification in a Web Worker.

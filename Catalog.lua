@@ -1,5 +1,151 @@
 -- Shared data for the addon and analyzer. Use literal tables only.
 OctoRaidCostItems = {
+  [6714] = {
+    ["name"] = "Ez-Thro Dynamite",
+    ["charges"] = 1,
+  },
+  [18588] = {
+    ["name"] = "Ez-Thro Dynamite II",
+    ["charges"] = 1,
+  },
+  [42129] = {
+    ["name"] = "Major Healing Salve",
+    ["charges"] = 1,
+  },
+  [42233] = {
+    ["name"] = "Weak Healing Salve",
+    ["charges"] = 1,
+  },
+  [42125] = {
+    ["name"] = "Healing Salve",
+    ["charges"] = 1,
+  },
+  [42126] = {
+    ["name"] = "Potent Healing Salve",
+    ["charges"] = 1,
+  },
+  [42128] = {
+    ["name"] = "Stabilizing Healing Salve",
+    ["charges"] = 1,
+  },
+  [42127] = {
+    ["name"] = "Superior Healing Salve",
+    ["charges"] = 1,
+  },
+  [7965] = {
+    ["name"] = "Solid Weightstone",
+    ["charges"] = 1,
+  },
+  [42229] = {
+    ["name"] = "Simple Slingshot",
+    ["charges"] = 1,
+  },
+  [8008] = {
+    ["name"] = "Mana Ruby",
+    ["charges"] = 1,
+    ["free"] = true,
+    ["bop"] = true,
+    ["auction"] = false,
+  },
+  [13724] = {
+    ["name"] = "Enriched Manna Biscuit",
+    ["charges"] = 1,
+    ["auction"] = false,
+    ["vendorCopper"] = 1200,
+    ["vendorBuyCount"] = 5,
+  },
+  [4426] = {
+    ["name"] = "Scroll of Strength III",
+    ["charges"] = 1,
+  },
+  [4425] = {
+    ["name"] = "Scroll of Agility III",
+    ["charges"] = 1,
+  },
+  [4424] = {
+    ["name"] = "Scroll of Spirit III",
+    ["charges"] = 1,
+  },
+  [4422] = {
+    ["name"] = "Scroll of Stamina III",
+    ["charges"] = 1,
+  },
+  [4421] = {
+    ["name"] = "Scroll of Protection III",
+    ["charges"] = 1,
+  },
+  [4419] = {
+    ["name"] = "Scroll of Intellect III",
+    ["charges"] = 1,
+  },
+  [3013] = {
+    ["name"] = "Scroll of Protection",
+    ["charges"] = 1,
+  },
+  [3012] = {
+    ["name"] = "Scroll of Agility",
+    ["charges"] = 1,
+  },
+  [2290] = {
+    ["name"] = "Scroll of Intellect II",
+    ["charges"] = 1,
+  },
+  [2289] = {
+    ["name"] = "Scroll of Strength II",
+    ["charges"] = 1,
+  },
+  [1712] = {
+    ["name"] = "Scroll of Spirit II",
+    ["charges"] = 1,
+  },
+  [1711] = {
+    ["name"] = "Scroll of Stamina II",
+    ["charges"] = 1,
+  },
+  [1478] = {
+    ["name"] = "Scroll of Protection II",
+    ["charges"] = 1,
+  },
+  [1477] = {
+    ["name"] = "Scroll of Agility II",
+    ["charges"] = 1,
+  },
+  [1181] = {
+    ["name"] = "Scroll of Spirit",
+    ["charges"] = 1,
+  },
+  [1180] = {
+    ["name"] = "Scroll of Stamina",
+    ["charges"] = 1,
+  },
+  [955] = {
+    ["name"] = "Scroll of Intellect",
+    ["charges"] = 1,
+  },
+  [954] = {
+    ["name"] = "Scroll of Strength",
+    ["charges"] = 1,
+  },
+  [61175] = {
+    ["name"] = "Medivh's Merlot Blue",
+    ["charges"] = 1,
+  },
+  [55048] = {
+    ["name"] = "Elixir of Greater Arcane Power",
+    ["charges"] = 1,
+  },
+  [13446] = {
+    ["name"] = "Major Healing Potion",
+    ["charges"] = 1,
+  },
+  [6149] = {
+    ["name"] = "Greater Mana Potion",
+    ["charges"] = 1,
+  },
+  [3387] = {
+    ["name"] = "Limited Invulnerability Potion",
+    ["charges"] = 1,
+  },
   [929] = {
     ["name"] = "Healing Potion",
     ["charges"] = 1,
@@ -243,6 +389,8 @@ OctoRaidCostItems = {
   [8079] = {
     ["name"] = "Conjured Crystal Water",
     ["charges"] = 1,
+    ["free"] = true,
+    ["auction"] = false,
   },
   [8410] = {
     ["name"] = "R.O.I.D.S.",
@@ -495,6 +643,10 @@ OctoRaidCostItems = {
   [13180] = {
     ["name"] = "Stratholme Holy Water",
     ["charges"] = 1,
+    ["bop"] = true,
+    ["auction"] = false,
+    ["fixedCopper"] = 0,
+    ["fixedPriceLabel"] = "Container loot (0g valuation)",
   },
   [13442] = {
     ["name"] = "Mighty Rage Potion",

@@ -1,12 +1,13 @@
 'use strict';
 /* Pure pricing/filter logic, shared by the UI and regression tests. */
 const ORC = (()=>{
- const free=r=>r.free||/conjured|healthstone|soulstone|spellstone|felstone/i.test(r.name||'');
+ const free=r=>r.free||/conjured|healthstone|soulstone|spellstone|felstone|^mana ruby$/i.test(r.name||'');
  function trackingPolicy(row){
   const names=[row.name||'',...(row.evidence||[]).map(e=>e.spell||'')];
   if(names.some(n=>/^innervate(?:\s*\(rank \d+\))?$/i.test(n)))return {only:true,label:'Class abilities',reason:'Class ability; no purchased consumable cost'};
   if(names.some(n=>/^add toy to collection[.!]?$/i.test(n)))return {only:true,label:'Collection actions',reason:'Collection action; not a raid consumable'};
   if(names.some(n=>/^(?:instant|deadly|crippling|mind[- ]numbing|wound|dissolvent) poison(?:\s+(?:[ivx]+|\d+))?$/i.test(n)))return {only:true,label:'Rogue poisons',reason:'Poison applications tracked separately; excluded from spending by policy'};
+  if(names.some(n=>/^simple slingshot$/i.test(n)))return {only:true,label:'Reusable tools',reason:'Tool activation; excluded from consumable spending'};
   if(free(row))return {only:true,label:'Conjured and class items',reason:'Conjured/class item; no market cost'};
   return {only:false};
  }
