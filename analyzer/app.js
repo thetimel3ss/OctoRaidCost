@@ -51,7 +51,7 @@ function priceInfo(){
  const allQuotes=Object.values(scan.prices||{}),priced=allQuotes.filter(q=>['copper','medianCopper','historicalCopper'].some(k=>ORC.validPrice(q[k]))).length;
  $('priceInfo').className=age!==null&&age>7?'unknown':'';
  if(scan.status==='reset'){$('priceInfo').textContent=scan.realm+' · Price TXT cleared. Run a new scan or import Aux in game.';return;}
- $('priceInfo').textContent=`${scan.realm||'No scan'} · ${scan.source||'AH scan'} · ${scan.status||'unknown status'} · ${priced}/${allQuotes.length} items have quotations · ${age===null?'Price age unknown':age.toFixed(1)+' days since capture'}${age!==null&&age>7?' · Old prices: run a new scan':''}${mismatch?' · Realm mismatch: quotations excluded':''}. Aux capture time is not the age of its historical market observations.`;
+ $('priceInfo').textContent=`${scan.realm||'No scan'} · ${scan.source||'AH scan'}${scan.scanMode==='quick'?' · Quick scan (consumables only)':scan.scanMode==='full'?' · Full scan (consumables + ingredients)':''} · ${scan.status||'unknown status'} · ${priced}/${allQuotes.length} items have quotations · ${age===null?'Price age unknown':age.toFixed(1)+' days since capture'}${age!==null&&age>7?' · Old prices: run a new scan':''}${mismatch?' · Realm mismatch: quotations excluded':''}. Aux capture time is not the age of its historical market observations.`;
 }
 function statusLabel(status){return {observed:'Direct item evidence',inferred:'Effect-derived',active:'Already active',ambiguous:'Multiple / conflicting items',recovery:'Generic food / drink',reviewed:'Manually reviewed',excluded:'Excluded'}[status]||status;}
 function itemName(id,fallback){return catalog[id]?.name||itemNames[id]||fallback||'Item '+id;}

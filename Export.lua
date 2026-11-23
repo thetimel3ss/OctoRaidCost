@@ -32,7 +32,7 @@ end
 local function compactSnapshot(snapshot)
     if not snapshot then return nil end
     local result = { realm = snapshot.realm, status = snapshot.status, source = snapshot.source,
-        startedAt = snapshot.startedAt, finishedAt = snapshot.finishedAt, prices = {} }
+        startedAt = snapshot.startedAt, finishedAt = snapshot.finishedAt, scanMode = snapshot.scanMode, prices = {} }
     local fields = { "copper", "medianCopper", "historicalCopper", "scannedAt", "listings", "sampleCount", "sampled" }
     for id, price in pairs(snapshot.prices or {}) do
         local entry = {}
@@ -47,7 +47,7 @@ function OctoRaidCost.PricePayload()
     local current = db.realms and db.realms[realm]
     local previous = db.lastComplete and db.lastComplete[realm]
     if current then payload.realms[realm] = compactSnapshot(current) end
-    if previous and (not current or current.status ~= "complete" or current.startedAt ~= previous.startedAt) then
+    if previous and previous ~= current then
         payload.lastComplete[realm] = compactSnapshot(previous)
     end
     if db.auxPrices and db.auxPrices[realm] then payload.auxPrices[realm] = compactSnapshot(db.auxPrices[realm]) end

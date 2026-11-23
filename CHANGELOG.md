@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.1 — 2026-11-23
+
+- Replaced the separate Scan button with Quick scan and Full scan buttons; the active button becomes Stop and blocks the other mode.
+- Added dynamic start/stop tooltips to both scan buttons and explanations for Aux import and TXT export.
+
+- Added saved Quick scan and Full scan choices, skipping ingredient-only AH searches in Quick scan while retaining dual-purpose consumables.
+- Added `/orc scan quick` and `/orc scan full`, locked mode changes during scans and applied the same scope to Aux imports.
+- Preserved separate completed snapshots even when consecutive scans start in the same second.
+- Recorded scan mode in TXT snapshots and displayed it in the analyzer without merging previous ingredient quotations into a new Quick scan.
+
 ## 0.7.0 — 2026-11-23
 
 - Ignored Dragon-Shaped Cookie cosmetic illusion observations in spending, usage summaries and review queues.

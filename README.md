@@ -25,7 +25,7 @@ You do not need to edit any addon files to use it.
 ## 1. Collect prices
 
 1. Open an Auction House and type `/orc`.
-2. Click **Scan**. The button changes to **Stop** while the scan runs.
+2. Click **Quick scan** (ready consumables only) or **Full scan** (consumables and ingredients). The clicked button changes to **Stop**, and the other scan button is disabled until the scan ends.
 3. Keep the Auction House open and avoid other auction searches until it finishes.
 4. Wait for **Complete**. Prices are exported automatically.
 
@@ -153,3 +153,9 @@ NPC prices use base prices before reputation discounts. Enriched Manna Biscuit i
 Rogue poisons use crafting costs from fixed NPC reagent prices, before reputation discounts. All six poison families and their ranks are supported without an AH scan. Each eligible weapon application consumes one dose; charges on the poisoned weapon are not extra applications. Already-active effects and ambiguous uses do not automatically add costs. Manual item or ingredient prices can override these estimates.
 
 Mana Citrine, Healthstones and Felstone are tracked as free class items. Sprouted Frond uses a zero quest-reward valuation. Boss-summoning lures, companion collection actions, the supported permanent armor kits and Tinyhoof's cosmetic balm are excluded from spending and usage summaries; their original evidence remains available. Aromatic Berries can use an AH quotation or its Survival ingredient recipe.
+
+## Scan modes
+
+**Quick scan** skips materials used only as ingredients. **Full scan** searches ready consumables and recipe materials; it is the default. Items that are both consumables and ingredients remain in both modes. The last used mode is saved. Each scan button starts its own mode and changes to Stop while active; the other scan button is disabled. Hover over buttons for explanations. Aux imports follow the selected mode too. Use `/orc scan quick` or `/orc scan full` to choose and start directly, or `/orc scan` to reuse your selection.
+
+Both modes export the same realm TXT filename and record their mode. A completed Quick scan is complete for its selected scope; it does not mean ingredients were searched. Each scan starts with fresh quotations, and previous complete scans stay separate in the analyzer. Fixed NPC prices and manual overrides still work in either mode. `/orc reset` restores Full scan along with the other default settings.

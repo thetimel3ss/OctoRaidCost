@@ -1,9 +1,21 @@
 -- Compact collector, kept above auction windows even when they are focused.
-local panel, status, current, unavailable, exportText, scanButton, auxButton, exportButton, progress, progressText, notice, timer
+local panel, status, current, unavailable, exportText, auxButton, exportButton, progress, progressText, notice, timer, quickButton, fullButton
 local showResults, openingMessage = false, nil
+local tooltipUpdates, tooltipScanState = {}, nil
+local function tooltip(b, title, description)
+    local update = function()
+        GameTooltip:SetOwner(b,"ANCHOR_RIGHT")
+        GameTooltip:SetText(type(title) == "function" and title() or title,1,0.82,0)
+        GameTooltip:AddLine(type(description) == "function" and description() or description,1,1,1,1)
+        GameTooltip:Show()
+    end
+    tooltipUpdates[b] = update
+    b:SetScript("OnEnter",update)
+    b:SetScript("OnLeave",function() GameTooltip:Hide() end)
+end
 local function button(parent, text, x, command)
     local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-    b:SetWidth(108); b:SetHeight(24); b:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -43)
+    b:SetWidth(166); b:SetHeight(24); b:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -72)
     b:SetText(text); b:SetScript("OnClick", function() SlashCmdList.OCTORAIDCOST(command); OctoRaidCost.RefreshUI() end)
     return b
 end
@@ -11,14 +23,27 @@ function OctoRaidCost.RefreshUI(scanActivity)
     if not panel then return end
     local p = OctoRaidCost.Progress()
     if scanActivity or p.running then showResults = true end
-    scanButton:SetText(p.running and "Stop" or "Scan")
+    local mode = p.running and p.scanMode or OctoRaidCost.GetScanMode()
     local ready = OctoRaidCost.HasNampower()
-    if ready or p.running then scanButton:Enable() else scanButton:Disable() end
-    if ready then auxButton:Enable(); exportButton:Enable()
-    else auxButton:Disable(); exportButton:Disable() end
+    quickButton:SetText(p.running and mode == "quick" and "Stop" or "Quick scan")
+    fullButton:SetText(p.running and mode == "full" and "Stop" or "Full scan")
+    if p.running then
+        if mode == "quick" then quickButton:Enable(); fullButton:Disable()
+        else quickButton:Disable(); fullButton:Enable() end
+    elseif ready then quickButton:Enable(); fullButton:Enable()
+    else quickButton:Disable(); fullButton:Disable() end
+    if ready and not p.running then auxButton:Enable() else auxButton:Disable() end
+    if ready then exportButton:Enable() else exportButton:Disable() end
+    local tipState = (p.running and "running:" or "idle:") .. mode
+    if tipState ~= tooltipScanState then
+        tooltipScanState = tipState
+        if GameTooltip and type(GameTooltip.IsOwned) == "function" then
+            for b, update in pairs(tooltipUpdates) do if GameTooltip:IsOwned(b) then update() end end
+        end
+    end
     if showResults then
         progress:SetMinMaxValues(0, math.max(1, p.total)); progress:SetValue(p.done)
-        progressText:SetText(p.done .. " / " .. p.total .. " items scanned")
+        progressText:SetText((p.scanMode == "quick" and "Quick" or "Full") .. ": " .. p.done .. " / " .. p.total .. " items scanned")
         local state = p.state
         if state == "complete" then state = "|cff40e080Complete|r"
         elseif state == "incomplete" then state = "|cffff5050Incomplete|r" end
@@ -29,10 +54,10 @@ function OctoRaidCost.RefreshUI(scanActivity)
         unavailable:SetText(p.names ~= "" and ("|cffffb347Unavailable: " .. string.sub(p.names, 1, 155) .. "|r") or "")
     else
         progress:SetMinMaxValues(0, 1); progress:SetValue(0)
-        progressText:SetText("Ready to scan")
+        progressText:SetText(mode == "quick" and "Ready to scan: consumables only" or "Ready to scan: items + ingredients")
         status:SetText(ready and "Ready" or "|cffff5050Nampower required|r")
         current:SetText(p.capturedAt and ("Last scan: " .. date("%Y-%m-%d %H:%M", p.capturedAt)) or "Last scan: No previous scan.")
-        unavailable:SetText("Open the auction house and click Scan. Keep other auction searches idle.")
+        unavailable:SetText("Open the auction house and choose Quick scan or Full scan. Keep other searches idle.")
     end
     exportText:SetText(not ready and "Nampower is required. Enable it and restart WoW." or OctoRaidCost.exportStatus or "Prices export to CustomData beside Chronicle logs.")
     local message = (showResults or OctoRaidCost.message ~= openingMessage) and OctoRaidCost.message or nil
@@ -75,14 +100,42 @@ function OctoRaidCost.ToggleUI()
     local title = panel:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
     title:SetPoint("TOPLEFT",panel,"TOPLEFT",20,-18);title:SetText("OctoRaidCost")
     local close = CreateFrame("Button",nil,panel,"UIPanelCloseButton"); close:SetPoint("TOPRIGHT",panel,"TOPRIGHT",-5,-5)
-    scanButton = button(panel,"Scan",20,"scan")
-    scanButton:SetScript("OnClick", function()
-        SlashCmdList.OCTORAIDCOST(OctoRaidCost.Progress().running and "stop" or "scan")
-        OctoRaidCost.RefreshUI()
-    end)
-    auxButton = button(panel,"Import Aux",136,"aux"); exportButton = button(panel,"Export TXT",252,"export")
+    auxButton = button(panel,"Import Aux",20,"aux"); exportButton = button(panel,"Export TXT",194,"export")
+    local function modeButton(text, x, mode)
+        local b = CreateFrame("Button",nil,panel,"UIPanelButtonTemplate")
+        b:SetWidth(166); b:SetHeight(24); b:SetPoint("TOPLEFT",panel,"TOPLEFT",x,-43); b:SetText(text)
+        b:SetScript("OnClick",function()
+            local p = OctoRaidCost.Progress()
+            if p.running then
+                if p.scanMode == mode then SlashCmdList.OCTORAIDCOST("stop") end
+            elseif OctoRaidCost.SetScanMode(mode) then
+                showResults = false; SlashCmdList.OCTORAIDCOST("scan")
+            end
+            OctoRaidCost.RefreshUI()
+        end)
+        return b
+    end
+    quickButton = modeButton("Quick scan",20,"quick")
+    fullButton = modeButton("Full scan",194,"full")
+    local function scanTooltip(b, mode, name, details)
+        tooltip(b,function()
+            local p = OctoRaidCost.Progress()
+            return p.running and p.scanMode == mode and ("Stop " .. name) or name
+        end,function()
+            local p = OctoRaidCost.Progress()
+            if p.running then
+                if p.scanMode == mode then return "Stop this scan and export the results collected so far as incomplete. The previous completed scan remains separate." end
+                return "Another scan is running. Stop it or wait for completion before starting this mode."
+            end
+            return details .. " Open the auction house first and keep other auction searches idle. Prices export automatically."
+        end)
+    end
+    scanTooltip(quickButton,"quick","Quick scan","Start a faster scan of ready consumables. Skip materials used only as ingredients.")
+    scanTooltip(fullButton,"full","Full scan","Start a scan of ready consumables and recipe ingredients. Ingredient prices can estimate costs when the finished item has no quotation.")
+    tooltip(auxButton,"Import Aux","Import supported prices already cached by aux-addon for the selected mode. This does not run an AH scan or import a TXT file. Nampower is required to export the result.")
+    tooltip(exportButton,"Export TXT","Write the current prices to CustomData/OctoRaidCost_<realm>.txt for the web analyzer. Replaces the realm TXT, including incomplete results and any retained previous complete scan.")
     progress = CreateFrame("StatusBar",nil,panel)
-    progress:SetPoint("TOPLEFT",panel,"TOPLEFT",20,-78);progress:SetWidth(340);progress:SetHeight(18)
+    progress:SetPoint("TOPLEFT",panel,"TOPLEFT",20,-99);progress:SetWidth(340);progress:SetHeight(16)
     progress:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar");progress:SetStatusBarColor(0.15,0.7,0.6)
     local bg = progress:CreateTexture(nil,"BACKGROUND");bg:SetAllPoints(progress);bg:SetTexture(0.08,0.08,0.08,1)
     progressText = progress:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall");progressText:SetPoint("CENTER",progress,"CENTER")
@@ -91,8 +144,8 @@ function OctoRaidCost.ToggleUI()
         f:SetPoint("TOPLEFT",panel,"TOPLEFT",20,y);f:SetWidth(340);f:SetHeight(height);f:SetJustifyH("LEFT");f:SetJustifyV("TOP")
         return f
     end
-    status=line(-106,16,"GameFontHighlight");current=line(-126,28);unavailable=line(-156,30)
-    exportText=line(-190,36);notice=line(-232,32,"GameFontNormalSmall")
+    status=line(-122,16,"GameFontHighlight");current=line(-142,24);unavailable=line(-169,27)
+    exportText=line(-201,28);notice=line(-237,30,"GameFontNormalSmall")
     timer=0
     panel:SetScript("OnUpdate",function() timer=timer+arg1;if timer>=0.2 then timer=0;OctoRaidCost.RefreshUI() end end)
     panel:Show(); panel:Raise(); OctoRaidCost.RefreshUI()

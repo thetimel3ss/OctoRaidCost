@@ -1516,6 +1516,7 @@ OctoRaidCostItems = {
     ["name"] = "Sweet Mountain Berry",
     ["charges"] = 1,
     ["ingredient"] = true,
+    ["consumable"] = true,
   },
   [51715] = {
     ["name"] = "Goblin Brainwashing Device",
