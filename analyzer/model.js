@@ -3,6 +3,7 @@
 const ORC = (()=>{
  const free=r=>r.free||/conjured|healthstone|soulstone|spellstone|felstone|^mana (?:ruby|citrine)$/i.test(r.name||'');
  const ignoredItems={
+  23684:'Unobtainable item; excluded from raid spending',
   19974:'Boss-summoning lure; not a player consumable',
   60770:'Companion collection item; not a raid consumable',
   61183:'Permanent armor modification; excluded from raid spending',
@@ -68,7 +69,7 @@ const ORC = (()=>{
   const n=(name||'').toLowerCase();
   if(/flask|concoction/.test(n))return 'Flasks';if(/oil|sharpen|weightstone|poison/.test(n))return 'Weapon buffs';
   if(/sapper|grenade|dynamite|bomb/.test(n))return 'Engineering';if(/elixir|juju|firewater/.test(n))return 'Elixirs and jujus';
-  if(/potion|rune|tea/.test(n))return 'Potions and recovery';if(/food|soup|delight|medley|surprise|rum|merlot|drink|chili|fish|squid|steak/.test(n))return 'Food and drink';return 'Other';
+  if(/potion|rune|tea/.test(n))return 'Potions and recovery';if(/food|mango|soup|delight|medley|surprise|rum|merlot|drink|chili|fish|squid|steak/.test(n))return 'Food and drink';return 'Other';
  }
  function decisions(raid,overrides={}){
   return (raid.ledger||raid.rows||[]).map((r,index)=>{

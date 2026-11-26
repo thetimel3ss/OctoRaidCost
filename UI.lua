@@ -1,5 +1,5 @@
 -- Compact collector, kept above auction windows even when they are focused.
-local panel, status, current, unavailable, exportText, auxButton, exportButton, progress, progressText, notice, timer, quickButton, fullButton
+local panel, status, current, unavailable, exportText, auxButton, exportButton, progress, progressText, notice, timer, smartButton, fullButton
 local showResults, openingMessage = false, nil
 local tooltipUpdates, tooltipScanState = {}, nil
 local function tooltip(b, title, description)
@@ -25,13 +25,13 @@ function OctoRaidCost.RefreshUI(scanActivity)
     if scanActivity or p.running then showResults = true end
     local mode = p.running and p.scanMode or OctoRaidCost.GetScanMode()
     local ready = OctoRaidCost.HasNampower()
-    quickButton:SetText(p.running and mode == "quick" and "Stop" or "Quick scan")
+    smartButton:SetText(p.running and mode == "smart" and "Stop" or "Smart scan")
     fullButton:SetText(p.running and mode == "full" and "Stop" or "Full scan")
     if p.running then
-        if mode == "quick" then quickButton:Enable(); fullButton:Disable()
-        else quickButton:Disable(); fullButton:Enable() end
-    elseif ready then quickButton:Enable(); fullButton:Enable()
-    else quickButton:Disable(); fullButton:Disable() end
+        if mode == "smart" then smartButton:Enable(); fullButton:Disable()
+        else smartButton:Disable(); fullButton:Enable() end
+    elseif ready then smartButton:Enable(); fullButton:Enable()
+    else smartButton:Disable(); fullButton:Disable() end
     if ready and not p.running then auxButton:Enable() else auxButton:Disable() end
     if ready then exportButton:Enable() else exportButton:Disable() end
     local tipState = (p.running and "running:" or "idle:") .. mode
@@ -42,8 +42,11 @@ function OctoRaidCost.RefreshUI(scanActivity)
         end
     end
     if showResults then
-        progress:SetMinMaxValues(0, math.max(1, p.total)); progress:SetValue(p.done)
-        progressText:SetText((p.scanMode == "quick" and "Quick" or "Full") .. ": " .. p.done .. " / " .. p.total .. " items scanned")
+        local staged = p.scanMode == "smart"
+        local done, total = staged and p.phaseDone or p.done, staged and p.phaseTotal or p.total
+        progress:SetMinMaxValues(0, math.max(1,total)); progress:SetValue(done)
+        local label = staged and (p.scanPhase == "ingredients" and "Ingredients" or "Consumables") or "Full"
+        progressText:SetText(label .. ": " .. done .. " / " .. total .. " items scanned")
         local state = p.state
         if state == "complete" then state = "|cff40e080Complete|r"
         elseif state == "incomplete" then state = "|cffff5050Incomplete|r" end
@@ -54,10 +57,10 @@ function OctoRaidCost.RefreshUI(scanActivity)
         unavailable:SetText(p.names ~= "" and ("|cffffb347Unavailable: " .. string.sub(p.names, 1, 155) .. "|r") or "")
     else
         progress:SetMinMaxValues(0, 1); progress:SetValue(0)
-        progressText:SetText(mode == "quick" and "Ready to scan: consumables only" or "Ready to scan: items + ingredients")
+        progressText:SetText(mode == "smart" and "Ready to scan: automatic ingredient fallback" or "Ready to scan: items + ingredients")
         status:SetText(ready and "Ready" or "|cffff5050Nampower required|r")
         current:SetText(p.capturedAt and ("Last scan: " .. date("%Y-%m-%d %H:%M", p.capturedAt)) or "Last scan: No previous scan.")
-        unavailable:SetText("Open the auction house and choose Quick scan or Full scan. Keep other searches idle.")
+        unavailable:SetText("Open the auction house and choose Smart scan or Full scan. Keep other searches idle.")
     end
     exportText:SetText(not ready and "Nampower is required. Enable it and restart WoW." or OctoRaidCost.exportStatus or "Prices export to CustomData beside Chronicle logs.")
     local message = (showResults or OctoRaidCost.message ~= openingMessage) and OctoRaidCost.message or nil
@@ -115,7 +118,7 @@ function OctoRaidCost.ToggleUI()
         end)
         return b
     end
-    quickButton = modeButton("Quick scan",20,"quick")
+    smartButton = modeButton("Smart scan",20,"smart")
     fullButton = modeButton("Full scan",194,"full")
     local function scanTooltip(b, mode, name, details)
         tooltip(b,function()
@@ -130,7 +133,7 @@ function OctoRaidCost.ToggleUI()
             return details .. " Open the auction house first and keep other auction searches idle. Prices export automatically."
         end)
     end
-    scanTooltip(quickButton,"quick","Quick scan","Start a faster scan of ready consumables. Skip materials used only as ingredients.")
+    scanTooltip(smartButton,"smart","Smart scan","Search ready consumables first, then only the recipe ingredients needed for items without quotations. Shared ingredients are searched once.")
     scanTooltip(fullButton,"full","Full scan","Start a scan of ready consumables and recipe ingredients. Ingredient prices can estimate costs when the finished item has no quotation.")
     tooltip(auxButton,"Import Aux","Import supported prices already cached by aux-addon for the selected mode. This does not run an AH scan or import a TXT file. Nampower is required to export the result.")
     tooltip(exportButton,"Export TXT","Write the current prices to CustomData/OctoRaidCost_<realm>.txt for the web analyzer. Replaces the realm TXT, including incomplete results and any retained previous complete scan.")

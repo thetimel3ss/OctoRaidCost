@@ -6,7 +6,8 @@ function validatePrices(db){
   if(!db[key]||typeof db[key]!=='object'||Array.isArray(db[key]))throw Error('Invalid price collections');
   for(const scan of Object.values(db[key])){
    if(!scan||typeof scan.realm!=='string'||!scan.prices||typeof scan.prices!=='object'||Array.isArray(scan.prices))throw Error('Invalid realm price snapshot');
-   if(scan.scanMode!==undefined&&!['quick','full'].includes(scan.scanMode))throw Error('Invalid scan mode');
+   if(scan.scanMode!==undefined&&!['quick','smart','full'].includes(scan.scanMode))throw Error('Invalid scan mode');
+   if(scan.scanPhase!==undefined&&!['consumables','ingredients','all'].includes(scan.scanPhase))throw Error('Invalid scan phase');
    for(const [id,entry] of Object.entries(scan.prices)){
     if(!/^\d+$/.test(id)||!entry||typeof entry!=='object')throw Error('Invalid item quotation');
     for(const field of ['copper','medianCopper','historicalCopper'])if(entry[field]!==undefined&&(!Number.isFinite(entry[field])||entry[field]<-1))throw Error('Invalid price value');

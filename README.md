@@ -25,7 +25,7 @@ You do not need to edit any addon files to use it.
 ## 1. Collect prices
 
 1. Open an Auction House and type `/orc`.
-2. Click **Quick scan** (ready consumables only) or **Full scan** (consumables and ingredients). The clicked button changes to **Stop**, and the other scan button is disabled until the scan ends.
+2. Click **Smart scan** (consumables, then needed ingredients) or **Full scan** (consumables and ingredients). The clicked button changes to **Stop**, and the other scan button is disabled until the scan ends.
 3. Keep the Auction House open and avoid other auction searches until it finishes.
 4. Wait for **Complete**. Prices are exported automatically.
 
@@ -101,7 +101,7 @@ Time values are minutes relative to the first encounter. A start of `0` excludes
 ## Reports, PDFs and backups
 
 - **Player reports** lists only the selected player's recorded consumables.
-- **Download TXT — this player** or **Download TXT — all players** saves quantities, costs, price sources and usage-only actions as readable text.
+- **Download TXT — this player** or **Download TXT — all players** saves aligned quantities, costs, evidence classifications and usage-only actions as readable text.
 - **Save PDF — this player** or **Save PDF — all players** opens the browser print dialog. Choose **Save as PDF**. Select detailed pages or compact cards; printing follows the active filters.
 - **Export CSV** saves the eligible consumable rows under the current filters.
 - **Download share summary** saves a readable text summary.
@@ -146,7 +146,7 @@ If reset reports a file-writing failure, fix the problem and run `/orc reset` ag
 
 ## Navigate the analyzer
 
-Use **Overview** for raid totals, player rankings and spending composition. Open **Players** for individual reports and PDF/TXT exports, **Prices** for quotations and manual prices, **Evidence** for ambiguous uses, and **History** for saved reports and backups. Filters and general exports remain available under **Filters & exports**.
+Use **Overview** for raid totals, player rankings and spending composition. Click a player name in the ranking or complete breakdown to open **Players** with that player selected. Open **Players** for individual reports and PDF/TXT exports, **Prices** for quotations and manual prices, **Evidence** for ambiguous uses, and **History** for saved reports and backups. Filters and general exports remain available under **Filters & exports**.
 
 NPC prices use base prices before reputation discounts. Enriched Manna Biscuit is valued at 12 silver each (five for 60 silver). Stratholme Holy Water uses a zero loot valuation; its uses remain counted. Mana Ruby uses appear separately from consumable spending. Simple Slingshot is consumed on use and is valued per unit using its AH quotation. Update the addon and run a new AH scan to collect prices for newly added tradeable items.
 
@@ -156,6 +156,28 @@ Mana Citrine, Healthstones and Felstone are tracked as free class items. Sproute
 
 ## Scan modes
 
-**Quick scan** skips materials used only as ingredients. **Full scan** searches ready consumables and recipe materials; it is the default. Items that are both consumables and ingredients remain in both modes. The last used mode is saved. Each scan button starts its own mode and changes to Stop while active; the other scan button is disabled. Hover over buttons for explanations. Aux imports follow the selected mode too. Use `/orc scan quick` or `/orc scan full` to choose and start directly, or `/orc scan` to reuse your selection.
+**Smart scan** is the default. It searches ready consumables first, then only the ingredients needed for recipes whose finished item has no quotation. Materials are searched once and reused across recipes. For a crafted ingredient, it first checks the item itself and expands its recipe only if necessary. Items with fixed NPC or zero valuations do not need AH searches.
 
-Both modes export the same realm TXT filename and record their mode. A completed Quick scan is complete for its selected scope; it does not mean ingredients were searched. Each scan starts with fresh quotations, and previous complete scans stay separate in the analyzer. Fixed NPC prices and manual overrides still work in either mode. `/orc reset` restores Full scan along with the other default settings.
+**Full scan** searches all registered auctionable consumables and ingredients. Both buttons become **Stop** while active and block the other mode. Hover over buttons for explanations. Smart scan progress shows **Consumables**, then **Ingredients**; the ingredient total can grow when intermediate recipes need to be expanded.
+
+The last used mode is saved. Existing Quick scan settings migrate to Smart scan; an explicitly saved Full scan preference remains Full scan. Use `/orc scan smart`, `/orc scan full` or `/orc scan` to reuse the selection. Aux imports use the same fallback logic on their cached quotations.
+
+Both modes overwrite the same realm TXT filename, recording the mode and phase. Previous complete snapshots remain separate; old ingredient quotations are not silently merged. Legacy Quick scan TXT files can still be imported. Fixed NPC prices and manual overrides remain available. `/orc reset` restores Smart scan.
+
+Supported recipes cover Alchemy, Cooking, Engineering, Survival, First Aid, Enchanting and Blacksmithing. Oils are valued per application; crafting yield and application charges are separate. Verified NPC materials use base unit prices and are excluded from AH searches. Scrolls and Potion of Fervor have no registered crafting recipes; their finished items can still use AH prices. Crystal Infused Bandage is unobtainable and excluded from AH searches and consumable spending.
+
+Recipe estimates use the base output displayed in the database and do not assume extra crafting procs. Iron Grenade and EZ-Thro Dynamite explicitly use the minimum displayed yield. Springy Rope uses the NPC base price of 85 copper per unit (one per purchase). Premium Chocolate uses the NPC base price of 7 silver per unit (one per purchase), outside AH searches.
+
+Fallback only covers supported recipes. Smart scan can approach Full scan's search count when many finished items are unavailable or BoP recipes need their ingredients.
+
+Smart scan also evaluates registered ingredient routes for BoP consumables. The BoP item itself is excluded from AH searches; tradeable materials are searched when necessary. Free or fixed-price items do not trigger ingredient searches, and registered NPC ingredient prices need no AH search.
+
+### Reports and artwork
+
+Player reports show only that player's identified consumables. Use **Save PDF** for the detailed report or compact cards; all-player PDFs include a raid summary. Detailed reports start each player on a new page and continue onto another page when necessary. TXT reports include raid context, aligned quantities/costs and an evidence legend (D = direct, E = estimated). Values are rounded to copper, and unknown prices remain explicitly unpriced. **Value basis** selects direct evidence alone or direct plus eligible estimates for report totals and item lists. Longer reports/cards continue with a part number; repeated player totals on continued pages are not additional spending.
+
+Item artwork is bundled from the [OctoWoW database](https://octowow.st/db/), with class artwork sourced through Wowhead/ZAM. A neutral bag replaces missing item artwork. No image requests are sent to those services while using the analyzer.
+
+Public Chronicle instance metadata and consumable payloads are cached locally for up to seven days, keyed by instance ID. Reparsed raids have a new ID. Prices, manual overrides and review decisions are not part of this cache. If browser storage is unavailable, raids load normally over the network. Clear site data in your browser to remove the cache; this also removes local settings and saved reports.
+
+For **Restore Mana (#17531)** casts with a recorded use time and exactly **Major Mana Potion / Diet McWeaksauce** as compatible candidates, ORC prefers Major Mana Potion as an estimate. The Evidence page explains this preference and retains both candidates. It does not establish which item was actually used. Direct item IDs take priority; other ambiguous effects and already-active buffs do not use this preference. Manual review can replace or exclude the estimate.

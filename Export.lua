@@ -32,7 +32,7 @@ end
 local function compactSnapshot(snapshot)
     if not snapshot then return nil end
     local result = { realm = snapshot.realm, status = snapshot.status, source = snapshot.source,
-        startedAt = snapshot.startedAt, finishedAt = snapshot.finishedAt, scanMode = snapshot.scanMode, prices = {} }
+        startedAt = snapshot.startedAt, finishedAt = snapshot.finishedAt, scanMode = snapshot.scanMode, scanPhase = snapshot.scanPhase, prices = {} }
     local fields = { "copper", "medianCopper", "historicalCopper", "scannedAt", "listings", "sampleCount", "sampled" }
     for id, price in pairs(snapshot.prices or {}) do
         local entry = {}

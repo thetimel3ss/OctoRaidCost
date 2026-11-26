@@ -20,7 +20,7 @@ jobs:
       - name: Package installation folder
         run: |
           mkdir -p package/OctoRaidCost
-          cp Catalog.lua OctoRaidCost.lua Export.lua UI.lua OctoRaidCost.toc README.md CHANGELOG.md package/OctoRaidCost/
+          cp Catalog.lua Recipes.lua OctoRaidCost.lua Export.lua UI.lua OctoRaidCost.toc README.md CHANGELOG.md package/OctoRaidCost/
           cd package
           zip -r ../OctoRaidCost.zip OctoRaidCost
       - name: Publish release

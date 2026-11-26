@@ -1,6 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id), clone=v=>JSON.parse(JSON.stringify(v));
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const consumableFallback=()=>`<svg class="consumable-fallback" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" aria-hidden="true" focusable="false"><rect x="1" y="1" width="30" height="30" rx="6" fill="#f0f2f1" stroke="#d9dfdc"/><path d="M12 7h8l-2 5 6 9-1 4-4 2h-6l-4-2-1-4 6-9Z" fill="#d8dfdb" stroke="#677b72" stroke-width="1.3" stroke-linejoin="round"/><path d="M12 12h8m-4 0 3 4" fill="none" stroke="#677b72" stroke-width="1.3" stroke-linecap="round"/></svg>`;
 const gold=n=>Number(n).toFixed(2)+' g';
 const priceGold=n=>Number(n).toFixed(4)+' g';
 const STORE='OctoRaidCost.reports.v1',MANUAL_STORE='OctoRaidCost.manual.v1',PREFS='OctoRaidCost.preferences.v2';
@@ -51,7 +52,7 @@ function priceInfo(){
  const allQuotes=Object.values(scan.prices||{}),priced=allQuotes.filter(q=>['copper','medianCopper','historicalCopper'].some(k=>ORC.validPrice(q[k]))).length;
  $('priceInfo').className=age!==null&&age>7?'unknown':'';
  if(scan.status==='reset'){$('priceInfo').textContent=scan.realm+' · Price TXT cleared. Run a new scan or import Aux in game.';return;}
- $('priceInfo').textContent=`${scan.realm||'No scan'} · ${scan.source||'AH scan'}${scan.scanMode==='quick'?' · Quick scan (consumables only)':scan.scanMode==='full'?' · Full scan (consumables + ingredients)':''} · ${scan.status||'unknown status'} · ${priced}/${allQuotes.length} items have quotations · ${age===null?'Price age unknown':age.toFixed(1)+' days since capture'}${age!==null&&age>7?' · Old prices: run a new scan':''}${mismatch?' · Realm mismatch: quotations excluded':''}. Aux capture time is not the age of its historical market observations.`;
+ $('priceInfo').textContent=`${scan.realm||'No scan'} · ${scan.source||'AH scan'}${scan.scanMode==='smart'?' · Smart scan (automatic ingredient fallback)':scan.scanMode==='quick'?' · Quick scan (legacy, consumables only)':scan.scanMode==='full'?' · Full scan (consumables + ingredients)':''}${scan.scanMode==='smart'&&scan.scanPhase==='ingredients'?' · Ingredients phase':scan.scanMode==='smart'&&scan.scanPhase==='consumables'?' · Consumables phase':''} · ${scan.status||'unknown status'} · ${priced}/${allQuotes.length} items have quotations · ${age===null?'Price age unknown':age.toFixed(1)+' days since capture'}${age!==null&&age>7?' · Old prices: run a new scan':''}${mismatch?' · Realm mismatch: quotations excluded':''}. Aux capture time is not the age of its historical market observations.`;
 }
 function statusLabel(status){return {observed:'Direct item evidence',inferred:'Effect-derived',active:'Already active',ambiguous:'Multiple / conflicting items',recovery:'Generic food / drink',reviewed:'Manually reviewed',excluded:'Excluded'}[status]||status;}
 function itemName(id,fallback){return catalog[id]?.name||itemNames[id]||fallback||'Item '+id;}
@@ -62,6 +63,9 @@ function filterDescription(){
  if(f.start!=='')labels.push('From minute '+f.start);if(f.end!=='')labels.push('To minute '+f.end);
  if(f.mode!=='all')labels.push(f.mode==='flask'?'Flasks only':'No direct flask use');if(f.search)labels.push('Player: '+f.search);
  return labels.length?labels.join(' · '):'Full raid, including recorded pre-pull uses';
+}
+function playerReportLink(total){
+ return '<button type="button" class="player-report-link" data-player-report="'+esc(total.player)+'" aria-label="'+esc('Open report for '+total.name)+'">'+esc(total.name)+'</button>';
 }
 function render(){
  priceInfo();if(!raid)return;
@@ -75,20 +79,20 @@ function render(){
  $('priceQueueSummary').textContent=missingItems.length?`${missingItems.length} identified items lack quotations. Their ${result.missing} uses remain in player reports, excluded from monetary totals until priced.`:'All eligible identified items have quotations.';
  $('filterNotice').textContent=filterDescription()+(filters().start!==''&&Number(filters().start)>=0?' — recorded uses before the first encounter are excluded by this time filter.':'');
  $('summary').textContent=`${raid.name} · ${raid.guild||'No guild'} · ${raid.realm} · Selected total ${gold(totals.reduce((sum,t)=>sum+t.total,0))}${f.includeEstimates?' (direct + estimates)':' (direct only)'} · Direct ${gold(result.observed)} · Additional eligible estimates ${gold(result.estimated)} · Unpriced uses ${result.missing}`;
- $('totals').innerHTML=table(['Player','Class','Priced uses','Observed','Additional estimated','Selected total','Unpriced uses'],totals.map(t=>[esc(t.name),esc(raid.players[t.player].class),t.uses,gold(t.observed),gold(t.estimated),gold(t.total),t.missing?'<span class="unknown">'+t.missing+'</span>':'0']));
+ $('totals').innerHTML=table(['Player','Class','Priced uses','Observed','Additional estimated','Selected total','Unpriced uses'],totals.map(t=>[playerReportLink(t),esc(raid.players[t.player].class),t.uses,gold(t.observed),gold(t.estimated),gold(t.total),t.missing?'<span class="unknown">'+t.missing+'</span>':'0']));
  const max=Math.max(1,...totals.map(t=>t.total)),vertical=$('orientation').value==='vertical';$('chart').className=vertical?'vertical':'';
- $('chart').innerHTML=totals.map(t=>`<div class="chartrow"><span>${esc(t.name)}</span><div class="bar" style="${vertical?'height:'+Math.max(2,t.total/max*180)+'px':'width:'+t.total/max*100+'%'}"></div><span>${gold(t.total)}</span></div>`).join('');
+ $('chart').innerHTML=totals.map(t=>`<div class="chartrow">${playerReportLink(t)}<div class="bar" style="${vertical?'height:'+Math.max(2,t.total/max*180)+'px':'width:'+t.total/max*100+'%'}"></div><span>${gold(t.total)}</span></div>`).join('');
  const categories={};for(const r of rs){const c=categories[r.category]??={observed:0,estimated:0,missing:0};const p=ORC.perUse(r,context).value;if(p===null)c.missing+=r.quantity;else c[r.status==='observed'?'observed':'estimated']+=p*r.quantity;}
  $('categories').innerHTML=table(['Category','Observed','Estimated','Unpriced uses'],Object.entries(categories).map(([c,v])=>[esc(c),gold(v.observed),gold(v.estimated),v.missing]));
  const items=[...new Map(rs.map(r=>[r.item,r])).values()].sort((a,b)=>a.name.localeCompare(b.name));
  const shownItems=items.filter(r=>{const mode=$('priceView').value,q=ORC.unit(r,context);return mode==='missing'?q.value===null:mode==='outside'?!Object.hasOwn(catalog,String(r.item)):mode==='old'?(ORC.priceAge(q)??0)>7:true;});
- $('items').innerHTML=table(['Item','ID','Quoted whole-item gold','Manual override','Charges','Price status / source','Identified uses'],shownItems.map(r=>{const q=ORC.unit(r,context);return [esc(r.name),r.item,q.value===null?'<span class="unknown">Unknown</span>':gold(q.value),quoteInput(r.item,r.name,ORC.free(r)),`<input class="price" type="number" min="1" max="10000" step="1" data-charges="${r.item}" aria-label="Applications per item for ${esc(r.name)}" placeholder="${r.charges||catalog[r.item]?.charges||1}" value="${charges[r.item]||''}">`,priceStatus(r,q),rs.filter(x=>x.item===r.item).reduce((s,x)=>s+x.quantity,0)];}));
- $('ingredients').innerHTML=table(['Ingredient','ID','Quoted gold','Price status / source','Manual override'],Object.entries(catalog).filter(([,v])=>v.ingredient).map(([i,v])=>{const q=ORC.quote(i,context);return [esc(v.name),i,q.value===null?'Unknown':gold(q.value),priceStatus({item:Number(i),name:v.name},q),quoteInput(i,v.name)];}));
+ $('items').innerHTML=table(['Item','ID','Quoted whole-item gold','Manual override','Charges','Price status / source','Identified uses'],shownItems.map(r=>{const q=ORC.unit(r,context);return ['<span class="report-item">'+reportItemIcon(r.item)+esc(r.name)+'</span>',r.item,q.value===null?'<span class="unknown">Unknown</span>':gold(q.value),quoteInput(r.item,r.name,ORC.free(r)),`<input class="price" type="number" min="1" max="10000" step="1" data-charges="${r.item}" aria-label="Applications per item for ${esc(r.name)}" placeholder="${r.charges||catalog[r.item]?.charges||1}" value="${charges[r.item]||''}">`,priceStatus(r,q),rs.filter(x=>x.item===r.item).reduce((s,x)=>s+x.quantity,0)];}));
+ $('ingredients').innerHTML=table(['Ingredient','ID','Quoted gold','Price status / source','Manual override'],Object.entries(catalog).filter(([,v])=>v.ingredient).map(([i,v])=>{const q=ORC.quote(i,context);return ['<span class="report-item">'+reportItemIcon(i)+esc(v.name)+'</span>',i,q.value===null?'Unknown':gold(q.value),priceStatus({item:Number(i),name:v.name},q),quoteInput(i,v.name)];}));
  const selectedPlayer=$('playerDetail').value;
  $('playerDetail').innerHTML=totals.map(t=>`<option value="${esc(t.player)}">${esc(t.name)}</option>`).join('');
  $('playerDetail').value=totals.some(t=>t.player===selectedPlayer)?selectedPlayer:totals[0]?.player||'';
  renderPlayer();
- $('utilityUses').innerHTML=table(['Player','Item / ability','Recorded uses','Classification'],totals.flatMap(t=>ORC.playerItems(result.usage,t.player,context).map(r=>[esc(t.name),esc(r.name),r.quantity,esc(r.policy.label)])));
+ $('utilityUses').innerHTML=table(['Player','Item / ability','Recorded uses','Classification'],totals.flatMap(t=>ORC.playerItems(result.usage,t.player,context).map(r=>[esc(t.name),'<span class="report-item">'+reportItemIcon(r.item)+esc(r.name)+'</span>',r.quantity,esc(r.policy.label)])));
  const counts={};for(const r of result.rows)counts[r.status]=(counts[r.status]||0)+r.quantity;
  $('evidenceSummary').textContent=Object.entries(counts).map(([s,n])=>statusLabel(s)+': '+n).join(' · ')+'. Observation counts do not certify physical item counts.';
  const mode=$('reviewMode').value,search=$('reviewSearch').value.toLowerCase();
@@ -105,58 +109,91 @@ function render(){
  $('coverage').innerHTML=table(['Measure','Value'],[['Raw projections',raid.observations],['Unique evidence',raid.evidence],['Correlated groups',raid.diagnostics?.correlated||0],['Identified items with quotation',items.filter(r=>ORC.unit(r,context).value!==null).length+'/'+items.length],['Unpriced eligible uses',result.missing],['Automatic estimates','Timestamped casts or out-of-combat uses with one item candidate'],['Aura/heal-only evidence','Excluded until reviewed']]);
  renderHistory();
 }
-const classColors={WARRIOR:'#a87545',PALADIN:'#cf6b9b',HUNTER:'#6c963d',ROGUE:'#b69219',PRIEST:'#67859c',SHAMAN:'#2776b8',MAGE:'#3a9faf',WARLOCK:'#8b71b7',DRUID:'#d57b2b'};
-function reportFacts(total){return {items:ORC.playerItems(result.costs,total.player,ctx()),usage:ORC.playerItems(result.usage,total.player,ctx()),className:raid.players[total.player].class||'Unknown'};}
-function reportContext(){return esc(raid.name)+' · '+esc(raid.realm)+(raid.start?' · '+esc(new Date(raid.start).toLocaleDateString()):'');}
-function playerReport(total,printing=false){
- const {items,usage,className}=reportFacts(total),accent=classColors[className]||'#407d80';
- const counts=items.map(r=>[`${ORC.category(r.name)==='Flasks'?'★ ':''}${esc(r.name)}${ORC.quote(r.item,ctx()).route?'<br><small>'+esc(ORC.quote(r.item,ctx()).route)+'</small>':''}`,`<strong>${r.quantity}</strong>`,r.observed,r.estimated,r.missingObserved?(r.observedCost?gold(r.observedCost)+' + unknown':'Unknown'):gold(r.observedCost),r.missingEstimated?(r.estimatedCost?gold(r.estimatedCost)+' + unknown':'Unknown'):gold(r.estimatedCost),r.missing||'—']);
- return `<article class="player-page" style="--class-accent:${accent}"><header class="report-heading"><span class="report-brand">ORC / RAID CONSUMABLE REPORT</span><div><h2>${esc(total.name)}</h2><span class="report-class">${esc(className)}</span></div><p>${reportContext()}</p></header>`+
-  `<div class="report-stats"><div><span>Direct item cost</span><strong>${gold(total.observed)}</strong></div><div><span>Additional estimated</span><strong>${gold(total.estimated)}</strong></div><div><span>Unpriced uses</span><strong>${total.missing}</strong></div></div>`+
-  `<p class="report-filters">${esc(filterDescription())}</p>`+
-  '<h3>Consumables identified for this player</h3>'+(counts.length?table(['Consumable','Uses','Direct','Effect / review','Direct cost','Estimated cost','Unpriced'],counts):'<p>No consumable uses under the selected filters.</p>')+
-  (usage.length?'<h3>Class / utility uses <small>outside spending</small></h3>'+table(['Item / ability','Recorded uses','Classification'],usage.map(r=>[esc(r.name),r.quantity,esc(r.policy.label)])):'')+
-  '<footer class="report-note">Uses include direct and eligible effect-derived evidence. Already-active buffs are not new uses. Prices estimate replacement cost, not actual purchases.</footer></article>';
+const classColors={WARRIOR:'#a07149',PALADIN:'#a65582',HUNTER:'#637e36',ROGUE:'#9d7b14',PRIEST:'#54748a',SHAMAN:'#276cb0',MAGE:'#24868e',WARLOCK:'#7c62a4',DRUID:'#ba6828'};
+function money(value){const n=Math.round(value*10000),g=Math.floor(n/10000),s=Math.floor(n%10000/100),c=n%100;return (g?g+'g ':'')+(s||g?s+'s ':'')+c+'c';}
+function currency(value){const n=Math.round(value*10000),parts=[],g=Math.floor(n/10000),s=Math.floor(n%10000/100);if(g)parts.push([g,'gold','g']);if(s||g)parts.push([s,'silver','s']);parts.push([n%100,'copper','c']);return '<span class="report-money" title="'+money(value)+'">'+parts.map(([v,k,u])=>'<span>'+v+'<small class="currency-'+k+'">'+u+'</small></span>').join('')+'</span>';}
+function reportItemIcon(item){const icons=typeof ORCIcons==='undefined'?null:ORCIcons,src=icons?.textures[icons.items[item]];return src?'<img class="consumable-icon" src="'+src+'" alt="" aria-hidden="true">':consumableFallback();}
+function reportClassIcon(name){const src=typeof ORCIcons==='undefined'?null:ORCIcons.classes[name];return src?'<img class="class-icon" src="'+src+'" alt="" aria-hidden="true">':'';}
+document.addEventListener?.('error',event=>{if(event.target.matches?.('img.consumable-icon'))event.target.outerHTML=consumableFallback();},true);
+function reportFacts(total){
+ const included=result.costs.filter(r=>filters().includeEstimates||r.status==='observed');
+ const items=ORC.playerItems(included,total.player,ctx()),usage=ORC.playerItems(result.usage,total.player,ctx());
+ return {items,usage,className:raid.players[total.player].class||'Unknown',pending:result.rows.filter(r=>r.player===total.player&&ORC.needsReview(r)).length,unpriced:items.reduce((n,r)=>n+r.missing,0)};
 }
-function playerCard(total){
- const {items,usage,className}=reportFacts(total),accent=classColors[className]||'#407d80';
- const list=items.map(r=>`<li class="${ORC.category(r.name)==='Flasks'?'flask-line':''}"><span>${ORC.category(r.name)==='Flasks'?'★ ':''}${esc(r.name)}</span><span class="quantity">${r.quantity}<small>D${r.observed} / E${r.estimated}${r.missing?' · ?':''}</small></span></li>`).join('');
- return `<article class="player-card" style="--class-accent:${accent}"><div class="card-heading"><span>${esc(className)}</span><h2>${esc(total.name)}</h2></div><div class="card-total"><strong>${gold(total.observed)}</strong> direct<br><strong>${gold(total.estimated)}</strong> estimated${total.missing?`<br><span class="unknown">${total.missing} unpriced uses</span>`:''}</div><ul>${list||'<li>No identified consumables</li>'}</ul>`+
- (usage.length?'<div class="card-utility"><h3>Usage only · no spending</h3><ul>'+usage.map(r=>`<li><span>${esc(r.name)}</span><b>${r.quantity}</b></li>`).join('')+'</ul></div>':'')+'</article>';
+function reportContext(){return [raid.name,raid.realm,raid.start?new Date(raid.start).toLocaleDateString():''].filter(Boolean).map(esc).join(' · ');}
+function reportScope(){return filterDescription()+' · '+(filters().includeEstimates?'Direct + eligible estimates':'Direct item evidence only');}
+function reportBrand(){return '<div class="print-brand"><svg viewBox="0 0 36 40" aria-hidden="true"><path d="M18 2 33 8v12c0 8-7 14-15 18C10 34 3 28 3 20V8Z M10 24v-9m8 9V10m8 14v-5"/></svg><div>ORC<small>OCTO RAID COST</small></div></div>';}
+function reportHeader(label){return '<div class="print-masthead">'+reportBrand()+'<span>'+label+'</span></div>';}
+function reportFooter(){return '<footer class="print-footer"><span>ORC · RAID CONSUMABLE REPORT</span><a href="https://octo.chronicleclassic.com/instances/'+encodeURIComponent(raid.slug)+'">Raid data provided by Chronicle ↗</a></footer>';}
+function reportEvidence(item){return item.observed&&item.estimated?'Mixed':item.estimated?'Estimated':'Direct';}
+function reportItemCost(item){const value=item.observedCost+item.estimatedCost;return item.missing?(value?currency(value)+' + ':'')+'<em class="unpriced">Unpriced</em>':currency(value);}
+function playerReport(total,printing=false,part=null){
+ const {items,usage,className,pending,unpriced}=part||reportFacts(total),accent=classColors[className]||'#54748a';
+ const counts=items.map(r=>{const q=ORC.quote(r.item,ctx()),kind=q.kind==='recipe'?'Ingredient estimate':q.kind==='vendor'?'NPC valuation':q.kind==='fixed'?'Fixed valuation':'';
+  return ['<div class="report-item">'+reportItemIcon(r.item)+'<div>'+esc(r.name)+(kind?'<small>'+kind+'</small>':'')+(q.route?'<small>'+esc(q.route)+'</small>':'')+'</div></div>',`<strong>${r.quantity}</strong>`,reportItemCost(r),'<span class="report-evidence '+reportEvidence(r).toLowerCase()+'">'+reportEvidence(r)+'</span>'+(r.observed&&r.estimated?'<small>D'+r.observed+' / E'+r.estimated+'</small>':'')];});
+ return `<article class="player-page ${items.length>10?'dense':''}" style="--class-accent:${accent}">${printing?reportHeader('INDIVIDUAL PLAYER REPORT'):''}<header class="report-heading"><span class="report-brand">INDIVIDUAL CONSUMABLE REPORT</span><div><h2>${esc(total.name)}<span>.</span></h2>${part?.pages>1?'<small class="report-continuation">Part '+part.page+' of '+part.pages+' · same player, continued report</small>':''}<span class="report-class">${reportClassIcon(className)}${esc(className)}</span></div><p>${reportContext()}</p></header>`+
+  `<div class="report-value"><div><span>ESTIMATED REPLACEMENT VALUE</span><strong>${currency(total.total)}</strong></div><div class="report-breakdown"><span>Direct item cost<b>${currency(total.observed)}</b></span><span>Additional estimated<b>${filters().includeEstimates?currency(total.estimated):'Excluded by filter'}</b></span></div></div>`+
+  `<p class="report-filters">${esc(reportScope())}</p><div class="report-section-title"><h3>Consumables</h3><span>${items.reduce((n,r)=>n+r.quantity,0)} ELIGIBLE USES · ${unpriced} UNPRICED</span></div>`+
+  (counts.length?table(['Consumable','Uses','Replacement cost','Evidence'],counts):'<p>No consumable uses under the selected filters.</p>')+
+  (usage.length?'<div class="report-utility"><h3>Free / class uses <small>outside spending</small></h3>'+table(['Item / ability','Recorded uses','Classification'],usage.map(r=>['<span class="report-item">'+reportItemIcon(r.item)+esc(r.name)+'</span>',r.quantity,esc(r.policy.label)]))+'</div>':'')+
+  '<div class="report-note"><h3>What this page includes</h3><p>Only consumables identified for this player. '+pending+' evidence groups require review and do not automatically add uses or cost. Already-active buffs are not new uses.</p><p>Direct = recorded item use. Estimated = eligible effect-derived or reviewed use. Prices are per consumed unit or application, with registered charges and recipe yields applied. Values estimate replacement cost, not actual purchases.</p></div>'+(printing?reportFooter():'')+'</article>';
 }
-function renderPlayer(){
- const total=result?.totals.find(t=>t.player===$('playerDetail').value);
- $('pivot').innerHTML=total?playerReport(total):'<p>No player matches the filters.</p>';
+function playerCard(total,part=null){
+ const {items,usage,className,pending,unpriced}=part||reportFacts(total),accent=classColors[className]||'#54748a';
+ const list=items.map(r=>`<li><span class="report-item">${reportItemIcon(r.item)}<span>${esc(r.name)}<small>${reportEvidence(r)}${r.observed&&r.estimated?' · D'+r.observed+' / E'+r.estimated:''}${r.missing?' · Unpriced':''}</small></span></span><b class="quantity">${r.quantity}</b></li>`).join('');
+ return `<article class="player-card" style="--class-accent:${accent}"><div class="card-heading"><span>${reportClassIcon(className)}${esc(className)}</span><h2>${esc(total.name)}</h2>${part?.pages>1?'<small class="report-continuation">Part '+part.page+' of '+part.pages+'</small>':''}</div><div class="card-total"><small>REPLACEMENT VALUE</small><strong>${currency(total.total)}</strong></div><ul>${list||'<li>No identified consumables</li>'}</ul>`+
+ (usage.length?'<div class="card-utility"><h3>Usage only · no spending</h3><ul>'+usage.map(r=>`<li><span class="report-item">${reportItemIcon(r.item)}${esc(r.name)}</span><b>${r.quantity}</b></li>`).join('')+'</ul></div>':'')+'<div class="card-note">'+unpriced+' unpriced uses<br>'+pending+' groups awaiting review</div></article>';
 }
+function summaryReport(players){
+ const sum=players.reduce((n,t)=>n+t.total,0),direct=players.reduce((n,t)=>n+t.observed,0),estimated=players.reduce((n,t)=>n+t.estimated,0),facts=players.map(reportFacts),max=Math.max(1,...players.map(t=>t.total));
+ return '<section class="print-cover">'+reportHeader('RAID SUMMARY')+'<div class="report-eyebrow">YOUR RAID, ACCOUNTED FOR</div><h1>'+esc(raid.name)+'<span>.</span></h1><p class="report-context">'+[raid.guild,raid.realm,raid.start?new Date(raid.start).toLocaleDateString():''].filter(Boolean).map(esc).join(' · ')+'</p><div class="report-value"><div><span>ESTIMATED REPLACEMENT VALUE</span><strong>'+currency(sum)+'</strong></div><div class="report-breakdown"><span>Direct-use cost<b>'+currency(direct)+'</b></span><span>Additional estimated<b>'+(filters().includeEstimates?currency(estimated):'Excluded by filter')+'</b></span></div></div><div class="report-kpis"><div><span>RAID MEMBERS</span><strong>'+players.length+'</strong></div><div><span>ELIGIBLE USES</span><strong>'+facts.reduce((n,f)=>n+f.items.reduce((s,r)=>s+r.quantity,0),0)+'</strong></div><div><span>UNPRICED USES</span><strong>'+facts.reduce((n,f)=>n+f.unpriced,0)+'</strong></div></div><div class="report-section-title"><h3>Spending by player</h3><span>TOP 8 · REPLACEMENT VALUE</span></div><div class="print-ranking">'+players.slice(0,8).map((t,i)=>'<div style="--class-accent:'+(classColors[raid.players[t.player].class]||'#54748a')+'"><small>'+String(i+1).padStart(2,'0')+'</small><span class="print-rank-name">'+reportClassIcon(raid.players[t.player].class)+esc(t.name)+'</span><div class="print-track"><i style="width:'+t.total/max*100+'%"></i></div><strong>'+currency(t.total)+'</strong></div>').join('')+'</div><div class="report-scope"><div><h3>Reading the evidence</h3><p>Direct means a recorded item-use event. Estimated means eligible effect-derived or reviewed evidence. Existing buffs do not count as new uses. Missing information does not prove nonuse.</p></div><div><h3>Report scope</h3><p>'+esc(reportScope())+'. Prices: '+esc(scan.startedAt?new Date(scan.startedAt*1000).toLocaleString():'No dated scan')+'. '+facts.reduce((n,f)=>n+f.pending,0)+' groups await review. Values estimate replacement costs, not actual purchases.</p></div></div>'+reportFooter()+'</section>';
+}
+function renderPlayer(){const total=result?.totals.find(t=>t.player===$('playerDetail').value);$('pivot').innerHTML=total?playerReport(total):'<p>No player matches the filters.</p>';}
 $('resetFilters').onclick=()=>{for(const id of ['encounter','segment','category','from','to'])$(id).value='';$('mode').value='all';page=0;render();};
 $('playerDetail').onchange=renderPlayer;
-function printPlayers(all){
+function reportParts(total,budget,cards=false){
+ const facts=reportFacts(total),entries=[...facts.items.map(item=>({item,usage:false})),...facts.usage.map(item=>({item,usage:true}))],groups=[];let group=[],weight=0;
+ for(const entry of entries){const q=ORC.quote(entry.item.item,ctx()),cost=cards?1+Math.floor(entry.item.name.length/23)*.5:1+(q.route?1:0)+(entry.item.name.length>43?.5:0);
+  if(group.length&&weight+cost>budget){groups.push(group);group=[];weight=0;}group.push(entry);weight+=cost;
+ }
+ if(group.length||!groups.length)groups.push(group);
+ return groups.map((rows,i)=>({...facts,items:rows.filter(r=>!r.usage).map(r=>r.item),usage:rows.filter(r=>r.usage).map(r=>r.item),page:i+1,pages:groups.length}));
+}
+async function printPlayers(all){
  if(!raid||!result){$('message').textContent='Load a raid first.';return;}
  const players=all?result.totals:result.totals.filter(t=>t.player===$('playerDetail').value);
  if(!players.length){$('message').textContent='No players match the filters.';return;}
+ const pages=all?[summaryReport(players)]:[];
  if($('pdfLayout').value==='cards'){
-  const pages=[];for(let i=0;i<players.length;i+=3)pages.push(`<section class="cards-page"><div class="cards-title"><strong>ORC · Player consumable reports</strong><span>${reportContext()}</span><small>${esc(filterDescription())} · D = direct · E = effect-derived/reviewed · ? = unpriced</small></div><div class="cards-grid">${players.slice(i,i+3).map(playerCard).join('')}</div></section>`);
-  $('printReport').innerHTML=pages.join('');
- }else $('printReport').innerHTML=players.map(t=>playerReport(t,true)).join('');window.print();
+  for(let i=0;i<players.length;i+=3){
+   const group=players.slice(i,i+3),parts=group.map(t=>reportParts(t,9,true)),count=Math.max(...parts.map(p=>p.length));
+   for(let part=0;part<count;part++)pages.push(`<section class="cards-page">${reportHeader('COMPACT PLAYER REPORTS')}<div class="cards-title"><div class="report-eyebrow">AN ALTERNATIVE FOR SHARING</div><h1>Player cards<span>.</span></h1><span>${reportContext()}</span><small>${esc(reportScope())}${count>1?' · Group continuation '+(part+1)+'/'+count:''}</small></div><div class="cards-grid">${group.map((t,j)=>parts[j][part]?playerCard(t,parts[j][part]):'').join('')}</div><div class="report-note"><p>Direct = recorded item use. Estimated = eligible effect-derived or reviewed use. Free class uses remain outside spending. A continued card repeats the player total; do not add these repeated totals.</p></div>${reportFooter()}</section>`);
+  }
+ }else for(const total of players)for(const part of reportParts(total,12))pages.push(playerReport(total,true,part));
+ $('printReport').innerHTML=pages.join('');
+ await Promise.all(Array.from($('printReport').querySelectorAll?.('img')||[]).map(img=>img.decode().catch(()=>{})));
+ if(document.fonts)await document.fonts.ready;
+ window.print();
 }
 function playerText(total){
- const {items,usage,className}=reportFacts(total),c=ctx();
- const lines=[total.name+' — '+className,reportContext(),filterDescription(),
-  'Direct item cost: '+gold(total.observed),'Additional estimated: '+gold(total.estimated),'Unpriced uses: '+total.missing,'','Consumables'];
- for(const item of items){const q=ORC.quote(item.item,c);lines.push(item.name+' (#'+item.item+'): '+item.quantity+' uses · direct '+item.observed+' / estimated '+item.estimated,
-  '  Direct cost: '+gold(item.observedCost)+(item.missingObserved?' + Unknown':'')+' · Estimated cost: '+gold(item.estimatedCost)+(item.missingEstimated?' + Unknown':''),
-  '  Price: '+(q.value===null?'Unknown':priceGold(q.value)+' per whole item')+' · '+q.source);
+ const {items,usage,className,pending,unpriced}=reportFacts(total),width=92;
+ const lines=['='.repeat(width),total.name+' | '+className,'-'.repeat(width),'Consumable'.padEnd(45)+'Uses'.padStart(6)+'Replacement cost'.padStart(22)+'Evidence'.padStart(19),'-'.repeat(width)];
+ for(const r of items){const value=r.observedCost+r.estimatedCost,cost=r.missing?(value?money(value)+' + ?':'Unpriced'):money(value),evidence=r.observed&&r.estimated?'D'+r.observed+' / E'+r.estimated:r.estimated?'E'+r.estimated:'D'+r.observed;
+  lines.push(r.name.padEnd(45)+String(r.quantity).padStart(6)+cost.padStart(22)+evidence.padStart(19));
  }
- if(!items.length)lines.push('No eligible consumables under these filters.');
- if(usage.length){lines.push('','Usage only — outside spending');for(const item of usage)lines.push(item.name+': '+item.quantity+' uses · '+item.policy.label);}
- lines.push('','Estimated replacement costs, not actual purchases. Unknown costs are excluded.');return lines.join('\n');
+ if(!items.length)lines.push('No eligible consumable uses under these filters.');
+ lines.push('-'.repeat(width),'REPLACEMENT VALUE: '+money(total.total),'Direct item cost: '+money(total.observed)+' | Additional estimated: '+(filters().includeEstimates?money(total.estimated):'Excluded by filter')+' | Unpriced uses: '+unpriced);
+ if(usage.length){lines.push('','FREE / CLASS USES — outside spending');for(const r of usage)lines.push('  '+r.name.padEnd(43)+String(r.quantity).padStart(6));}
+ if(pending)lines.push('',pending+' evidence groups require review; not counted automatically.');
+ return lines.join('\n');
 }
 function downloadPlayerText(all){
  if(!raid||!result){$('message').textContent='Load a raid first.';return;}
  const players=all?result.totals:result.totals.filter(t=>t.player===$('playerDetail').value);
  if(!players.length){$('message').textContent='No players match the filters.';return;}
- const name=all?'all-players':players[0].name.replace(/[^a-z0-9_-]/gi,'_');
- download('OctoRaidCost-'+raid.slug+'-'+name+'.txt',players.map(playerText).join('\n\n'+'='.repeat(72)+'\n\n'));
+ const name=all?'all-players':players[0].name.replace(/[^a-z0-9_-]/gi,'_'),total=players.reduce((n,t)=>n+t.total,0);
+ const lines=['OCTO RAID COST | RAID CONSUMABLE REPORT','='.repeat(92),[raid.name,raid.guild,raid.realm].filter(Boolean).join(' | '),'Raid date: '+(raid.start?new Date(raid.start).toISOString():'Unknown'),'Chronicle: https://octo.chronicleclassic.com/instances/'+raid.slug,'Scope: '+reportScope(),'Price basis: '+$('policy').value+' | Captured: '+(scan.startedAt?new Date(scan.startedAt*1000).toISOString():'Unknown'),'Replacement value: '+money(total)+' | Players: '+players.length,'','READING THIS REPORT','  D = recorded item use; E = eligible effect-derived or reviewed use.','  Values estimate replacement costs, not actual purchases. Unknown costs are excluded.','  Already-active buffs are not new uses. Missing evidence does not prove nonuse.','  Registered charges and recipe yields are applied; values rounded to copper.','',...players.map(playerText),'','='.repeat(92),'END OF REPORT | Raid data provided by Chronicle'];
+ download('OctoRaidCost-'+raid.slug+'-'+name+'.txt',lines.join('\n'));
 }
 $('txtPlayer').onclick=()=>downloadPlayerText(false);$('txtAllPlayers').onclick=()=>downloadPlayerText(true);
 $('printPlayer').onclick=()=>printPlayers(false);$('printAllPlayers').onclick=()=>printPlayers(true);

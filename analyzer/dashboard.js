@@ -8,6 +8,12 @@ const Dashboard={
   $('viewCrumb').textContent={overview:'Overview',players:'Players',prices:'Prices',evidence:'Evidence',history:'History'}[view];
   $('pageTitle').innerHTML={overview:'Raid overview',players:'Player reports',prices:'Consumables & prices',evidence:'Evidence & review',history:'Raid history'}[view]+'<span class="title-dot">.</span>';
  },
+ openPlayer(player){
+  if(!raid||!result||!result.totals.some(t=>t.player===player))return false;
+  const select=$('playerDetail');
+  if(!Array.from(select.options).some(option=>option.value===player))return false;
+  select.value=player;renderPlayer();this.navigate('players');select.focus({preventScroll:true});return true;
+ },
  update(){
   if(!raid||!result){$('chart').innerHTML='<div class="empty-copy">Your raid’s spending ranking will appear here.<br>Load a raid and add your price file to begin.</div>';$('expandRanking').hidden=true;return;}
   const total=result.totals.reduce((s,t)=>s+t.total,0),uses=result.costs.reduce((s,r)=>s+r.quantity,0),pending=result.rows.filter(ORC.needsReview).length;
@@ -23,7 +29,7 @@ const Dashboard={
   if($('orientation').value!=='vertical'){
    const max=Math.max(1,...result.totals.map(t=>t.total)),estimates=filters().includeEstimates;
    $('chart').className='dashboard-ranking';$('chart').dataset.expanded=this.expanded;
-   $('chart').innerHTML=result.totals.map((t,index)=>'<div class="rank-row"><div class="rank-name"><span class="rank-number">'+String(index+1).padStart(2,'0')+'</span><i style="background:'+(classColors[raid.players[t.player]?.class]||'#929ca3')+'"></i><span>'+esc(t.name)+'</span></div><div class="rank-track"><i class="rank-direct" style="width:'+t.observed/max*100+'%"></i><i class="rank-estimate" style="width:'+(estimates?t.estimated/max*100:0)+'%"></i></div><div class="rank-value">'+t.total.toFixed(2)+' <small>g</small></div></div>').join('');
+   $('chart').innerHTML=result.totals.map((t,index)=>'<div class="rank-row"><div class="rank-name"><span class="rank-number">'+String(index+1).padStart(2,'0')+'</span><i style="background:'+(classColors[raid.players[t.player]?.class]||'#929ca3')+'"></i>'+playerReportLink(t)+'</div><div class="rank-track"><i class="rank-direct" style="width:'+t.observed/max*100+'%"></i><i class="rank-estimate" style="width:'+(estimates?t.estimated/max*100:0)+'%"></i></div><div class="rank-value">'+t.total.toFixed(2)+' <small>g</small></div></div>').join('');
    $('expandRanking').hidden=result.totals.length<=8;$('expandRanking').innerHTML=this.expanded?'Show fewer players <span>↑</span>':'Show all '+result.totals.length+' players <span>↓</span>';
   }else $('expandRanking').hidden=true;
   const colors=['#c1a264','#79ad98','#7f91a6','#9b8aa9','#b37f70','#9eaa7c','#7f9d9b'];
@@ -34,6 +40,10 @@ const Dashboard={
   $('categoryLegend').innerHTML=categories.length?categories.map(([name,value],i)=>'<div class="category-legend-row"><i style="background:'+colors[i%colors.length]+'"></i><span>'+esc(name)+'</span><strong>'+gold(value)+'</strong></div>').join(''):'<p class="empty-copy">Add price quotations to see your spending composition.</p>';
  }
 };
+for(const id of ['chart','totals'])$(id).addEventListener('click',event=>{
+ const button=event.target.closest?.('[data-player-report]');
+ if(button&&$(id).contains(button)){event.preventDefault();Dashboard.openPlayer(button.dataset.playerReport);}
+});
 document.querySelector('.brand').onclick=event=>{event.preventDefault();Dashboard.navigate('overview');};
 for(const button of document.querySelectorAll('[data-view]'))button.onclick=()=>Dashboard.navigate(button.dataset.view);
 const baseRender=render;render=function(){baseRender();Dashboard.update();};

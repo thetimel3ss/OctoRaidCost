@@ -29,6 +29,8 @@ jobs:
           const shared=require('./analyzer/shared-data.js');
           const data=shared.catalog(...['Catalog.lua','Recipes.lua','ItemNames.lua'].map(n=>fs.readFileSync(n,'utf8')));
           assert(Object.keys(data.items).length>0);
+          const icons=require('node:vm').runInNewContext(fs.readFileSync('analyzer/icons.js','utf8')+';ORCIcons;');
+          for(const id of Object.keys(data.items))assert(icons.textures[icons.items[id]],'Missing artwork '+id);
           for(const [id,recipe]of Object.entries(data.recipes)){
             assert(data.items[id]);
             for(const route of recipe.routes||[recipe]){
@@ -42,7 +44,7 @@ jobs:
         run: |
           mkdir -p _site/analyzer
           cp index.html .nojekyll Catalog.lua Recipes.lua ItemNames.lua _site/
-          cp analyzer/*.js analyzer/*.html analyzer/*.css _site/analyzer/
+          cp analyzer/*.js analyzer/*.html analyzer/*.css analyzer/ICONS.md _site/analyzer/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

@@ -35,10 +35,11 @@ local function database()
 end
 function OctoRaidCost.GetScanMode()
     local db = database()
-    return db.settings and db.settings.scanMode == "quick" and "quick" or "full"
+    if db.settings and db.settings.scanMode == "quick" then db.settings.scanMode = "smart" end
+    return db.settings and db.settings.scanMode == "full" and "full" or "smart"
 end
 function OctoRaidCost.SetScanMode(mode)
-    if mode ~= "quick" and mode ~= "full" then return false end
+    if mode ~= "smart" and mode ~= "full" then return false end
     if scan then say("Stop the scan before changing modes."); return false end
     local db = database(); db.settings = db.settings or {}; db.settings.scanMode = mode
     if OctoRaidCost.RefreshUI then OctoRaidCost.RefreshUI() end
@@ -48,10 +49,57 @@ function OctoRaidCost.ScanIDs(mode)
     local ids = {}
     for id in pairs(OctoRaidCostCatalog) do
         local item = OctoRaidCostItems and OctoRaidCostItems[id] or {}
-        if mode ~= "quick" or not item.ingredient or item.consumable then table.insert(ids, id) end
+        if mode ~= "smart" or not item.ingredient or item.consumable then table.insert(ids, id) end
     end
     table.sort(ids)
     return ids
+end
+local function validPrice(value)
+    return type(value) == "number" and value >= 0 and value < math.huge
+end
+-- Build one additional batch. Intermediates are searched before their recipes.
+function OctoRaidCost.NextIngredients(snapshot)
+    local needed, ids = {}, {}
+    local function quoted(id)
+        local meta = OctoRaidCostItems and OctoRaidCostItems[id] or {}
+        if meta.free or validPrice(meta.fixedCopper) or validPrice(meta.vendorCopper) then return true end
+        local price = snapshot.prices[id]
+        return price and (validPrice(price.copper) or validPrice(price.historicalCopper))
+    end
+    local function visit(id, path)
+        if quoted(id) or path[id] then return end
+        if OctoRaidCostCatalog[id] and not (snapshot.searched and snapshot.searched[id]) and not snapshot.prices[id] then
+            if not needed[id] then needed[id] = true; table.insert(ids,id) end
+            return
+        end
+        local recipe = OctoRaidCostRecipes and OctoRaidCostRecipes[id]
+        if not recipe then return end
+        path[id] = true
+        for _, route in ipairs(recipe.routes or {recipe}) do
+            if type(route.yield) == "number" and route.yield > 0 then
+                for _, part in ipairs(route.ingredients or {}) do
+                    if type(part.item) == "number" and type(part.quantity) == "number" and part.quantity > 0 then visit(part.item,path) end
+                end
+            end
+        end
+        path[id] = nil
+    end
+    for id, meta in pairs(OctoRaidCostItems or {}) do
+        if (not meta.ingredient or meta.consumable) and not meta.free and OctoRaidCostRecipes and OctoRaidCostRecipes[id] then
+            visit(id,{})
+        end
+    end
+    table.sort(ids)
+    return ids
+end
+local function nextBatch(snapshot)
+    if snapshot.scanMode ~= "smart" then return false end
+    local ids = OctoRaidCost.NextIngredients(snapshot)
+    if table.getn(ids) == 0 then return false end
+    if snapshot.scanPhase ~= "ingredients" then snapshot.phaseStart = table.getn(snapshot.ids) end
+    snapshot.scanPhase = "ingredients"
+    for _, id in ipairs(ids) do table.insert(snapshot.ids,id) end
+    return true
 end
 local function start()
     if not OctoRaidCost.RequireNampower() then return end
@@ -62,8 +110,9 @@ local function start()
     OctoRaidCostDB.realms = OctoRaidCostDB.realms or {}
     local mode = OctoRaidCost.GetScanMode()
     local ids = OctoRaidCost.ScanIDs(mode)
-    if table.getn(ids) == 0 then say("No items to search in the selected scan mode."); return end
-    scan = { status = "incomplete", startedAt = time(), realm = realm, prices = {}, ids = ids, index = 1, page = 0, scanMode = mode }
+    scan = { status = "incomplete", startedAt = time(), realm = realm, prices = {}, ids = ids, index = 1, page = 0,
+        scanMode = mode, scanPhase = mode == "smart" and "consumables" or "all", phaseStart = 0, searched = {} }
+    if table.getn(ids) == 0 and not nextBatch(scan) then scan = nil; say("No items to search in the selected scan mode."); return end
     local previous = OctoRaidCostDB.realms[realm]
     if previous and previous.status == "complete" then
         OctoRaidCostDB.lastComplete = OctoRaidCostDB.lastComplete or {}
@@ -71,7 +120,7 @@ local function start()
     end
     OctoRaidCostDB.realms[realm] = scan
     if OctoRaidCost.RefreshUI then OctoRaidCost.RefreshUI(true) end
-    say((mode == "quick" and "Quick scan: " or "Full scan: ") .. "scanning " .. table.getn(scan.ids) .. " items. Keep the AH open and do not browse auctions.")
+    say((mode == "smart" and "Smart scan: " or "Full scan: ") .. "scanning " .. table.getn(scan.ids) .. " items. Keep the AH open and do not browse auctions.")
     query()
 end
 frame:RegisterEvent("PLAYER_LOGIN")
@@ -111,10 +160,12 @@ frame:SetScript("OnEvent", function()
                 if math.floor(size / 2) * 2 == size then result.medianCopper = (result.samples[mid] + result.samples[mid + 1]) / 2 end
             end
             result.sampleCount = size; result.sampled = result.listings > size; result.samples = nil
+            scan.searched[id] = true
             scan.index = scan.index + 1; scan.page = 0
         end
         if scan.index > table.getn(scan.ids) then
-            stop("complete"); say("Scan complete. Prices are ready in the addon window.")
+            if nextBatch(scan) then delay = 1
+            else stop("complete"); say("Scan complete. Prices are ready in the addon window.") end
         else delay = 1 end
         if OctoRaidCost.RefreshUI then OctoRaidCost.RefreshUI() end
     end
@@ -138,9 +189,10 @@ function OctoRaidCost.ImportAux()
         say("This Aux build does not expose the supported history API."); return
     end
     local mode = OctoRaidCost.GetScanMode()
-    local snapshot = { realm = GetRealmName(), source = "Aux", status = "snapshot", startedAt = time(), prices = {}, scanMode = mode }
+    local snapshot = { realm = GetRealmName(), source = "Aux", status = "snapshot", startedAt = time(), prices = {}, scanMode = mode, searched = {}, scanPhase = mode == "smart" and "consumables" or "all" }
     local count = 0
-    for _, id in ipairs(OctoRaidCost.ScanIDs(mode)) do
+    local function capture(id)
+        snapshot.searched[id] = true
         local name = OctoRaidCostCatalog[id]
         local key = id .. ":0"
         local success, historical = pcall(history.value, key)
@@ -151,6 +203,15 @@ function OctoRaidCost.ImportAux()
             if success and type(historical) == "number" and historical >= 0 then entry.historicalCopper = historical end
             if marketOK and type(minimum) == "number" and minimum >= 0 then entry.copper = minimum end
             snapshot.prices[id] = entry; count = count + 1
+        end
+    end
+    for _, id in ipairs(OctoRaidCost.ScanIDs(mode)) do capture(id) end
+    if mode == "smart" then
+        local batch = OctoRaidCost.NextIngredients(snapshot)
+        while table.getn(batch) > 0 do
+            snapshot.scanPhase = "ingredients"
+            for _, id in ipairs(batch) do capture(id) end
+            batch = OctoRaidCost.NextIngredients(snapshot)
         end
     end
     if count == 0 then say("Aux has no supported prices for this catalog. Search the AH with Aux first."); return end
@@ -176,11 +237,14 @@ function OctoRaidCost.Progress()
     return {running = scan ~= nil, done = done, total = total, quoted = quoted, missing = missing,
         names = table.concat(names, ", "), state = scan and "Scanning" or current and current.status or "Ready",
         item = scan and (OctoRaidCost.currentItem or "") or "", page = scan and scan.page + 1 or 0,
-        capturedAt = current and current.startedAt, realm = GetRealmName(), scanMode = current and current.scanMode or OctoRaidCost.GetScanMode()}
+        capturedAt = current and current.startedAt, realm = GetRealmName(), scanMode = current and current.scanMode or OctoRaidCost.GetScanMode(),
+        scanPhase = current and current.scanPhase or "consumables",
+        phaseDone = math.max(0,done - (current and current.phaseStart or 0)),
+        phaseTotal = math.max(0,total - (current and current.phaseStart or 0))}
 end
 function OctoRaidCost.Status()
     local p = OctoRaidCost.Progress()
-    return p.realm .. " | " .. (p.scanMode == "quick" and "Quick scan" or "Full scan") .. " | " .. p.state .. " | " .. p.done .. "/" .. p.total ..
+    return p.realm .. " | " .. (p.scanMode == "smart" and "Smart scan" or "Full scan") .. " | " .. p.state .. " | " .. p.done .. "/" .. p.total ..
         " items | " .. p.quoted .. " quoted | " .. p.missing .. " unavailable", p.names
 end
 function OctoRaidCost.Reset()
@@ -205,7 +269,7 @@ function OctoRaidCost.Help()
     say("Commands:")
     say("/orc - Show or hide the addon window.")
     say("/orc scan - Start an AH scan using the selected mode.")
-    say("/orc scan quick - Search ready consumables only.")
+    say("/orc scan smart - Search consumables, then needed recipe ingredients.")
     say("/orc scan full - Search consumables and ingredients.")
     say("/orc stop - Stop the scan and retain incomplete prices.")
     say("/orc export - Export current prices to TXT.")
@@ -219,7 +283,7 @@ SlashCmdList.OCTORAIDCOST = function(msg)
     if msg == "help" then OctoRaidCost.Help()
     elseif msg == "reset" then OctoRaidCost.Reset()
     elseif msg == "scan" then start()
-    elseif msg == "scan quick" then if OctoRaidCost.SetScanMode("quick") then start() end
+    elseif msg == "scan smart" then if OctoRaidCost.SetScanMode("smart") then start() end
     elseif msg == "scan full" then if OctoRaidCost.SetScanMode("full") then start() end
     elseif msg == "aux" then OctoRaidCost.ImportAux()
     elseif msg == "export" then

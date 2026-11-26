@@ -48,7 +48,7 @@ const ORCChronicle=(()=>{
   const n=(name||'').toLowerCase();
   if(/flask|concoction/.test(n))return 'Flasks';if(/oil|sharpen|weightstone|poison/.test(n))return 'Weapon buffs';
   if(/sapper|grenade|dynamite|bomb/.test(n))return 'Engineering';if(/elixir|juju|firewater/.test(n))return 'Elixirs and jujus';
-  if(/potion|rune|tea/.test(n))return 'Potions and recovery';if(/food|soup|delight|medley|surprise|rum|merlot|drink|chili|fish|squid|steak/.test(n))return 'Food and drink';return 'Other';
+  if(/potion|rune|tea/.test(n))return 'Potions and recovery';if(/food|mango|soup|delight|medley|surprise|rum|merlot|drink|chili|fish|squid|steak/.test(n))return 'Food and drink';return 'Other';
  }
  function millis(value){if(!value)return 0;const n=Date.parse(value);if(!Number.isFinite(n))throw Error('Invalid encounter timestamp');return n;}
  function compare(a,b){if(Array.isArray(a)&&Array.isArray(b)){for(let i=0;i<Math.min(a.length,b.length);i++){const n=compare(a[i],b[i]);if(n)return n;}return a.length-b.length;}return a<b?-1:a>b?1:0;}
@@ -56,6 +56,9 @@ const ORCChronicle=(()=>{
   const groups=new Map(),seen=new Set(),players=instance.players||{};
   for(const event of events){if(!event.consume||!event.evidence)continue;const key=JSON.stringify([event.player,event.evidence]);if(seen.has(key))continue;seen.add(key);const group=JSON.stringify([event.player,event.consume]);if(!groups.has(group))groups.set(group,[]);groups.get(group).push(event);}
   const encounters=(instance.encounters||[]).map(e=>({id:e.id,name:e.name??'Encounter',boss:e.boss??false,outcome:e.kill_type??'unknown',start:millis(e.start_time),end:millis(e.end_time)}));
+  // Explicit database-verified item-use spells only; never guess from display names.
+  const useSpells=new Map();
+  for(const [id,meta]of Object.entries(catalog))if(Number.isSafeInteger(meta.useSpell)&&meta.useSpell>0){const ids=useSpells.get(meta.useSpell)||[];ids.push(Number(id));useSpells.set(meta.useSpell,ids);}
   const ledger=[];
   for(const [group,evidence]of groups){
    const [player,consume]=JSON.parse(group);if(!Object.hasOwn(players,player))continue;
@@ -63,24 +66,34 @@ const ORCChronicle=(()=>{
    const score=e=>[!!(e.consumed&&e.kind!==7),!!e.spell,!!e.item,!!e.name,e.confidence===1].map(Number);
    const chosen=evidence.reduce((a,b)=>compare(score(a),score(b))>=0?a:b);
    const sets=evidence.filter(e=>e.candidates.length).map(e=>new Set(e.candidates));
+   const mapped=[];
+   if(!exact.size&&!sets.length){
+    const ids=new Set(evidence.flatMap(e=>useSpells.get(e.spell_id)||[]));
+    if(ids.size===1){mapped.push(...ids);sets.push(ids);}
+   }
    const compatible=sets.length?[...sets[0]].filter(i=>sets.every(s=>s.has(i))):[];
    let item=exact.size===1?[...exact][0]:0;if(!exact.size&&compatible.length===1)item=compatible[0];
+   // User-approved preference for this exact shared effect/candidate pair, not an identity claim.
+   const preferredMana=!exact.size&&compatible.length===2&&compatible.includes(13444)&&compatible.includes(23578)
+    &&evidence.some(e=>e.spell_id===17531&&[2,9].includes(e.kind)&&e.consumed)
+    &&!evidence.some(e=>[2,9].includes(e.kind)&&e.consumed&&e.spell_id!==17531);
+   if(preferredMana)item=13444;
    const recorded=evidence.some(e=>e.item===item&&item&&e.consumed&&e.kind!==7&&(e.kind===1||e.confidence===1));
    const timestamps=evidence.filter(e=>e.consumed&&e.kind!==7).map(e=>e.consumed),timestamp=timestamps.length?Math.min(...timestamps):0;
    let status=item&&!recorded&&timestamp?'inferred':item&&timestamp?'observed':item?'active':'ambiguous';
    if(!recorded&&['Food','Drink'].includes(chosen.spell))status='recovery';
    const eligible=status==='inferred'&&evidence.some(e=>[2,9].includes(e.kind)&&e.consumed);
    const name=catalog[item]?.name||itemNames[item]||chosen.name||chosen.spell||'Unidentified consumable';
-   const candidates=[...new Set([...evidence.flatMap(e=>e.candidates),...exact])].sort((a,b)=>a-b);
+   const candidates=[...new Set([...evidence.flatMap(e=>e.candidates),...exact,...mapped])].sort((a,b)=>a-b);
    const projections=[...new Set(evidence.map(e=>e.encounter))].sort();
    const containing=encounters.filter(e=>timestamp&&e.start<=timestamp&&timestamp<=e.end);
    const following=encounters.filter(e=>timestamp&&e.start>timestamp).sort((a,b)=>a.start-b.start);
    const projected=encounters.filter(e=>projections.includes(e.id)).sort((a,b)=>a.start-b.start);
    const prior=encounters.filter(e=>timestamp&&e.end<timestamp).sort((a,b)=>b.end-a.end);
    const assigned=(containing[0]||following[0]||prior[0]||projected[0])?.id||'';
-   const reason=status==='observed'?'Item ID and use timestamp recorded':eligible?'One compatible item and a timestamped cast/out-of-combat use; eligible estimate':status==='inferred'?'One compatible item, but no cast proves a new use':status==='active'?'Effect already active; use time unknown':status==='recovery'?'Generic food/drink observations may repeat':'Several or conflicting item candidates; no automatic selection';
+   const reason=preferredMana?'Major Mana Potion preferred by ORC policy for shared Restore Mana #17531; estimated use, not direct identification (Diet McWeaksauce remains a candidate)':status==='observed'?'Item ID and use timestamp recorded':eligible?'One compatible item and a timestamped cast/out-of-combat use; eligible estimate':status==='inferred'?'One compatible item, but no cast proves a new use':status==='active'?'Effect already active; use time unknown':status==='recovery'?'Generic food/drink observations may repeat':'Several or conflicting item candidates; no automatic selection';
    const meta=catalog[item]||{};
-   ledger.push({id:consume,player,item,name,status,quantity:1,candidates,candidateDetails:candidates.map(i=>({item:i,name:catalog[i]?.name||itemNames[i]||'Item '+i})),charges:meta.charges??1,free:meta.free??false,category:category(name),timestamp,itemSource:recorded?'recorded':item?'effect':'unknown',effectName:chosen.spell,effectSpellId:chosen.spell_id??0,encounter:assigned,projections,eligible,reason,evidence:evidence.map(e=>({id:e.evidence,kind:e.kind,confidence:e.confidence,spell:e.spell,spellId:e.spell_id??0,consumed:e.consumed,observed:e.observed}))});
+   ledger.push({id:consume,player,item,name,status,quantity:1,candidates,candidateDetails:candidates.map(i=>({item:i,name:catalog[i]?.name||itemNames[i]||'Item '+i})),charges:meta.charges??1,free:meta.free??false,category:category(name),timestamp,itemSource:recorded?'recorded':item?'effect':'unknown',effectName:chosen.spell,effectSpellId:chosen.spell_id??0,encounter:assigned,projections,eligible,reason,...(preferredMana?{selectionPolicy:'major-mana-preference-17531'}:{}),evidence:evidence.map(e=>({id:e.evidence,kind:e.kind,confidence:e.confidence,spell:e.spell,spellId:e.spell_id??0,consumed:e.consumed,observed:e.observed}))});
   }
   const direct=new Map(ledger.filter(r=>r.status==='observed').map(r=>[JSON.stringify([r.player,r.item,r.timestamp]),r]));
   const filtered=[];let correlated=0;

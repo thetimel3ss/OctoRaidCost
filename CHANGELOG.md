@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.8.0 — 2026-11-26
+
+- Assigned Premium Chocolate its NPC base price of 7 silver per single-unit purchase and excluded it from AH searches.
+- Removed unobtainable Crystal Infused Bandage from the catalog and spending, including older report evidence.
+- Assigned Springy Rope its NPC base price of 85 copper per single-unit purchase and excluded it from AH searches.
+- Added 151 researched crafting recipes and 117 supporting materials, excluding scrolls and Potion of Fervor.
+- Added eleven verified NPC material unit prices, selected profession recipes over internal copies and retained oil charges and base/minimum displayed crafting yields.
+- Expanded Full scan to 401 auctionable items while keeping Smart scan at 254 initial consumable searches with conditional ingredient fallback.
+- Preferred Major Mana Potion as an explicit estimate for timestamped Restore Mana #17531 casts with exactly Major Mana Potion and Diet McWeaksauce as compatible candidates; retained alternatives and direct item identities.
+- Restored circular class icons in the analyzer and PDF exports.
+- Added Essence Mango as a BoP quest exchange (one Zandalar Honor Token yields ten) and Solid Sharpening Stone with its Solid Stone crafting ingredient.
+- Identified otherwise unmapped Sharpen Blade IV (#9900) events as Solid Sharpening Stone, retaining effect-derived evidence rules and server-provided candidates.
+- Embedded artwork for all 511 catalog items and nine classes, with a local vector fallback for missing images.
+- Added numbered continuations for long player reports/cards and kept direct-only exports consistent with their value basis.
+- Redesigned detailed PDFs and class-colored player cards; added all-player raid summaries with class icons and class-colored spending bars.
+- Replaced pixelated currency artwork with copper-rounded values and small gold/silver/copper units; aligned TXT columns and added report context and evidence notes.
+- Cached validated public Chronicle payloads in the browser for seven days per instance ID, reanalyzing them with current catalog data.
+- Linked player names in Overview rankings and breakdown tables to their selected individual reports.
+- Replaced Quick scan with Smart scan, searching finished consumables before requesting only needed recipe ingredients.
+- Reused ingredient quotations, expanded missing crafted intermediates and supported alternative recipes with cycle protection.
+- Added separate Consumables and Ingredients progress phases and recorded mode/phase in TXT exports.
+- Applied smart fallback to Aux imports, migrated saved Quick scan preferences and retained legacy TXT import support.
+- Loaded and packaged Recipes.lua for in-game ingredient planning.
+
 ## 0.7.1 — 2026-11-23
 
 - Replaced the separate Scan button with Quick scan and Full scan buttons; the active button becomes Stop and blocks the other mode.

@@ -11,3 +11,5 @@
 @media print{.sidebar,.appbar,.workspace,.preview-tag{display:none!important}#printReport{display:block!important}}
 
 .page-heading>a.button-secondary{text-decoration:none;white-space:nowrap}
+
+.player-report-link{appearance:none;background:transparent;border:0;padding:0;color:inherit;font:inherit;text-align:left;cursor:pointer;text-decoration:underline;text-decoration-color:transparent;text-underline-offset:3px}.player-report-link:hover{background:transparent;color:var(--gold);text-decoration-color:currentColor}.player-report-link:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:2px}.rank-name .player-report-link{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.chartrow>.player-report-link{max-width:100%}
