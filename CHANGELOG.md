@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.8.1 — 2026-11-28
+
+- Made entire Overview spending rows clickable, with hover highlighting and native keyboard navigation.
+
+- Preferred Major Healing Potion as an explicit estimate for timestamped Healing Potion #17534 casts with exactly Major Healing Potion and The McWeaksauce Classic as compatible candidates.
+- Excluded isolated Summon Holy Mount Visual #31726 evidence from consumable spending and review queues while retaining direct consumable evidence and raw observations.
+- Clarified received-bandage evidence without assigning the recipient an automatic consumable cost.
+- Added a bottom-right Analyzer button and `/orc analyzer` command with a preselected, copyable web analyzer link.
+
 ## 0.8.0 — 2026-11-26
 
 - Assigned Premium Chocolate its NPC base price of 7 silver per single-unit purchase and excluded it from AH searches.

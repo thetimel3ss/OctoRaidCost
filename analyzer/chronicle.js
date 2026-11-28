@@ -2,6 +2,10 @@
 // Chronicle's gzip/framed protobuf consume stream; shared by browser and parity checks.
 const ORCChronicle=(()=>{
  const utf8=new TextDecoder('utf-8',{fatal:true});
+ const potionPreferences=[
+  {spell:17531,item:13444,other:23578,name:'Major Mana Potion',alternative:'Diet McWeaksauce',effect:'Restore Mana',policy:'major-mana-preference-17531'},
+  {spell:17534,item:13446,other:23579,name:'Major Healing Potion',alternative:'The McWeaksauce Classic',effect:'Healing Potion',policy:'major-healing-preference-17534'}
+ ];
  function varint(data,pos){
   let value=0;
   for(let shift=0;shift<70;shift+=7){if(pos>=data.length)throw Error('Truncated varint');const byte=data[pos++];value+=(byte&127)*2**shift;if(!Number.isSafeInteger(value))throw Error('Unsafe protobuf integer');if(byte<128)return [value,pos];}
@@ -74,10 +78,10 @@ const ORCChronicle=(()=>{
    const compatible=sets.length?[...sets[0]].filter(i=>sets.every(s=>s.has(i))):[];
    let item=exact.size===1?[...exact][0]:0;if(!exact.size&&compatible.length===1)item=compatible[0];
    // User-approved preference for this exact shared effect/candidate pair, not an identity claim.
-   const preferredMana=!exact.size&&compatible.length===2&&compatible.includes(13444)&&compatible.includes(23578)
-    &&evidence.some(e=>e.spell_id===17531&&[2,9].includes(e.kind)&&e.consumed)
-    &&!evidence.some(e=>[2,9].includes(e.kind)&&e.consumed&&e.spell_id!==17531);
-   if(preferredMana)item=13444;
+   const preference=!exact.size&&compatible.length===2?potionPreferences.find(p=>compatible.includes(p.item)&&compatible.includes(p.other)
+    &&evidence.some(e=>e.spell_id===p.spell&&[2,9].includes(e.kind)&&e.consumed)
+    &&!evidence.some(e=>[2,9].includes(e.kind)&&e.consumed&&e.spell_id!==p.spell)):null;
+   if(preference)item=preference.item;
    const recorded=evidence.some(e=>e.item===item&&item&&e.consumed&&e.kind!==7&&(e.kind===1||e.confidence===1));
    const timestamps=evidence.filter(e=>e.consumed&&e.kind!==7).map(e=>e.consumed),timestamp=timestamps.length?Math.min(...timestamps):0;
    let status=item&&!recorded&&timestamp?'inferred':item&&timestamp?'observed':item?'active':'ambiguous';
@@ -91,9 +95,11 @@ const ORCChronicle=(()=>{
    const projected=encounters.filter(e=>projections.includes(e.id)).sort((a,b)=>a.start-b.start);
    const prior=encounters.filter(e=>timestamp&&e.end<timestamp).sort((a,b)=>b.end-a.end);
    const assigned=(containing[0]||following[0]||prior[0]||projected[0])?.id||'';
-   const reason=preferredMana?'Major Mana Potion preferred by ORC policy for shared Restore Mana #17531; estimated use, not direct identification (Diet McWeaksauce remains a candidate)':status==='observed'?'Item ID and use timestamp recorded':eligible?'One compatible item and a timestamped cast/out-of-combat use; eligible estimate':status==='inferred'?'One compatible item, but no cast proves a new use':status==='active'?'Effect already active; use time unknown':status==='recovery'?'Generic food/drink observations may repeat':'Several or conflicting item candidates; no automatic selection';
+   const bandageReceived=status==='inferred'&&!eligible&&/\bbandage\b/i.test(name)&&evidence.some(e=>e.kind===3)
+    &&!evidence.some(e=>[1,2,9].includes(e.kind)&&e.consumed);
+   const reason=preference?preference.name+' preferred by ORC policy for shared '+preference.effect+' #'+preference.spell+'; estimated use, not direct identification ('+preference.alternative+' remains a candidate)':bandageReceived?'Bandage effect received; no cast by this player recorded. Another player may have applied the bandage; no automatic spending':status==='observed'?'Item ID and use timestamp recorded':eligible?'One compatible item and a timestamped cast/out-of-combat use; eligible estimate':status==='inferred'?'One compatible item, but no cast proves a new use':status==='active'?'Effect already active; use time unknown':status==='recovery'?'Generic food/drink observations may repeat':'Several or conflicting item candidates; no automatic selection';
    const meta=catalog[item]||{};
-   ledger.push({id:consume,player,item,name,status,quantity:1,candidates,candidateDetails:candidates.map(i=>({item:i,name:catalog[i]?.name||itemNames[i]||'Item '+i})),charges:meta.charges??1,free:meta.free??false,category:category(name),timestamp,itemSource:recorded?'recorded':item?'effect':'unknown',effectName:chosen.spell,effectSpellId:chosen.spell_id??0,encounter:assigned,projections,eligible,reason,...(preferredMana?{selectionPolicy:'major-mana-preference-17531'}:{}),evidence:evidence.map(e=>({id:e.evidence,kind:e.kind,confidence:e.confidence,spell:e.spell,spellId:e.spell_id??0,consumed:e.consumed,observed:e.observed}))});
+   ledger.push({id:consume,player,item,name,status,quantity:1,candidates,candidateDetails:candidates.map(i=>({item:i,name:catalog[i]?.name||itemNames[i]||'Item '+i})),charges:meta.charges??1,free:meta.free??false,category:category(name),timestamp,itemSource:recorded?'recorded':item?'effect':'unknown',effectName:chosen.spell,effectSpellId:chosen.spell_id??0,encounter:assigned,projections,eligible,reason,...(preference?{selectionPolicy:preference.policy}:{}),evidence:evidence.map(e=>({id:e.evidence,kind:e.kind,confidence:e.confidence,spell:e.spell,spellId:e.spell_id??0,consumed:e.consumed,observed:e.observed}))});
   }
   const direct=new Map(ledger.filter(r=>r.status==='observed').map(r=>[JSON.stringify([r.player,r.item,r.timestamp]),r]));
   const filtered=[];let correlated=0;

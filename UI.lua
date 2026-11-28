@@ -1,5 +1,6 @@
 -- Compact collector, kept above auction windows even when they are focused.
 local panel, status, current, unavailable, exportText, auxButton, exportButton, progress, progressText, notice, timer, smartButton, fullButton
+local analyzerDialog, analyzerLink
 local showResults, openingMessage = false, nil
 local tooltipUpdates, tooltipScanState = {}, nil
 local function tooltip(b, title, description)
@@ -18,6 +19,44 @@ local function button(parent, text, x, command)
     b:SetWidth(166); b:SetHeight(24); b:SetPoint("TOPLEFT", parent, "TOPLEFT", x, -72)
     b:SetText(text); b:SetScript("OnClick", function() SlashCmdList.OCTORAIDCOST(command); OctoRaidCost.RefreshUI() end)
     return b
+end
+function OctoRaidCost.ShowAnalyzerLink()
+    if not analyzerDialog then
+        analyzerDialog = CreateFrame("Frame", "OctoRaidCostAnalyzerDialog", UIParent)
+        analyzerDialog:SetWidth(380); analyzerDialog:SetHeight(124)
+        analyzerDialog:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        analyzerDialog:SetFrameStrata("FULLSCREEN_DIALOG"); analyzerDialog:SetFrameLevel(200)
+        analyzerDialog:SetToplevel(true); analyzerDialog:SetClampedToScreen(true); analyzerDialog:EnableMouse(true)
+        analyzerDialog:SetBackdrop({bgFile="Interface\\DialogFrame\\UI-DialogBox-Background",edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",tile=true,tileSize=32,edgeSize=32,insets={left=8,right=8,top=8,bottom=8}})
+        local title = analyzerDialog:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
+        title:SetPoint("TOPLEFT",analyzerDialog,"TOPLEFT",20,-18); title:SetText("Web analyzer")
+        local close = CreateFrame("Button",nil,analyzerDialog,"UIPanelCloseButton")
+        close:SetPoint("TOPRIGHT",analyzerDialog,"TOPRIGHT",-5,-5)
+        close:SetScript("OnClick",function() analyzerDialog:Hide() end)
+        analyzerLink = CreateFrame("EditBox","OctoRaidCostAnalyzerLink",analyzerDialog,"InputBoxTemplate")
+        analyzerLink:SetWidth(332); analyzerLink:SetHeight(24)
+        analyzerLink:SetPoint("TOPLEFT",analyzerDialog,"TOPLEFT",26,-49)
+        analyzerLink:SetAutoFocus(false); analyzerLink:SetMaxLetters(200)
+        analyzerLink:SetFontObject(GameFontHighlightSmall)
+        local function dismiss() analyzerLink:ClearFocus(); analyzerDialog:Hide() end
+        analyzerLink:SetScript("OnEscapePressed",dismiss)
+        analyzerLink:SetScript("OnEnterPressed",dismiss)
+        analyzerLink:SetScript("OnEditFocusGained",function() analyzerLink:HighlightText() end)
+        analyzerLink:SetScript("OnTextChanged",function()
+            if analyzerLink:GetText() ~= OctoRaidCost.AnalyzerURL then
+                analyzerLink:SetText(OctoRaidCost.AnalyzerURL); analyzerLink:HighlightText()
+            end
+        end)
+        analyzerDialog:SetScript("OnHide",function() analyzerLink:ClearFocus() end)
+        local instruction = analyzerDialog:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
+        instruction:SetPoint("TOPLEFT",analyzerDialog,"TOPLEFT",20,-84)
+        instruction:SetWidth(340); instruction:SetHeight(25); instruction:SetJustifyH("LEFT")
+        instruction:SetText("Press Ctrl+C to copy, then paste into your browser.")
+        if UISpecialFrames then table.insert(UISpecialFrames,"OctoRaidCostAnalyzerDialog") end
+    end
+    analyzerDialog:Show(); analyzerDialog:Raise()
+    analyzerLink:SetText(OctoRaidCost.AnalyzerURL)
+    analyzerLink:SetFocus(); analyzerLink:HighlightText()
 end
 function OctoRaidCost.RefreshUI(scanActivity)
     if not panel then return end
@@ -64,7 +103,7 @@ function OctoRaidCost.RefreshUI(scanActivity)
     end
     exportText:SetText(not ready and "Nampower is required. Enable it and restart WoW." or OctoRaidCost.exportStatus or "Prices export to CustomData beside Chronicle logs.")
     local message = (showResults or OctoRaidCost.message ~= openingMessage) and OctoRaidCost.message or nil
-    notice:SetText(string.sub(message or "Import Aux uses cached Aux prices. Export TXT saves prices for the analyzer.", 1, 170))
+    notice:SetText(string.sub(message or "Import Aux uses cached Aux prices. Export TXT saves prices for the analyzer.", 1, 110))
 end
 function OctoRaidCost.ResetUI()
     showResults = false; openingMessage = nil
@@ -103,6 +142,11 @@ function OctoRaidCost.ToggleUI()
     local title = panel:CreateFontString(nil,"OVERLAY","GameFontNormalLarge")
     title:SetPoint("TOPLEFT",panel,"TOPLEFT",20,-18);title:SetText("OctoRaidCost")
     local close = CreateFrame("Button",nil,panel,"UIPanelCloseButton"); close:SetPoint("TOPRIGHT",panel,"TOPRIGHT",-5,-5)
+    local analyzerButton = CreateFrame("Button",nil,panel,"UIPanelButtonTemplate")
+    analyzerButton:SetWidth(100); analyzerButton:SetHeight(21)
+    analyzerButton:SetPoint("BOTTOMRIGHT",panel,"BOTTOMRIGHT",-20,14); analyzerButton:SetText("Analyzer")
+    analyzerButton:SetScript("OnClick",function() OctoRaidCost.ShowAnalyzerLink() end)
+    tooltip(analyzerButton,"Copy analyzer link","Show a selectable link to the ORC web analyzer. Press Ctrl+C, then paste it into your browser. Also available with /orc analyzer.")
     auxButton = button(panel,"Import Aux",20,"aux"); exportButton = button(panel,"Export TXT",194,"export")
     local function modeButton(text, x, mode)
         local b = CreateFrame("Button",nil,panel,"UIPanelButtonTemplate")
@@ -148,7 +192,7 @@ function OctoRaidCost.ToggleUI()
         return f
     end
     status=line(-122,16,"GameFontHighlight");current=line(-142,24);unavailable=line(-169,27)
-    exportText=line(-201,28);notice=line(-237,30,"GameFontNormalSmall")
+    exportText=line(-201,28);notice=line(-237,30,"GameFontNormalSmall"); notice:SetWidth(230)
     timer=0
     panel:SetScript("OnUpdate",function() timer=timer+arg1;if timer>=0.2 then timer=0;OctoRaidCost.RefreshUI() end end)
     panel:Show(); panel:Raise(); OctoRaidCost.RefreshUI()

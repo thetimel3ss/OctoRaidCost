@@ -1,4 +1,5 @@
 OctoRaidCost = {}
+OctoRaidCost.AnalyzerURL = "https://thetimel3ss.github.io/OctoRaidCost/"
 local frame = CreateFrame("Frame")
 local scan, auctionOpen, waiting, elapsed, delay
 local function say(text) OctoRaidCost.message = text; DEFAULT_CHAT_FRAME:AddMessage("|cff69ccf0OctoRaidCost:|r " .. text) end
@@ -275,12 +276,14 @@ function OctoRaidCost.Help()
     say("/orc export - Export current prices to TXT.")
     say("/orc aux - Import supported Aux cached prices.")
     say("/orc status - Show scan status.")
+    say("/orc analyzer - Show the analyzer link for copying.")
     say("/orc reset - Clear saved data and price TXT files; reset window position.")
     say("/orc help - Show this command list.")
 end
 SLASH_OCTORAIDCOST1 = "/orc"
 SlashCmdList.OCTORAIDCOST = function(msg)
     if msg == "help" then OctoRaidCost.Help()
+    elseif msg == "analyzer" then OctoRaidCost.ShowAnalyzerLink()
     elseif msg == "reset" then OctoRaidCost.Reset()
     elseif msg == "scan" then start()
     elseif msg == "scan smart" then if OctoRaidCost.SetScanMode("smart") then start() end

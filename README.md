@@ -98,6 +98,8 @@ Filter by player, category, encounter, bosses/trash, kills/wipes or time range. 
 
 Time values are minutes relative to the first encounter. A start of `0` excludes uses recorded before that encounter; leave the time fields empty to include recorded pre-pull uses.
 
+To get the analyzer link in game, click **Analyzer** at the bottom-right of the `/orc` window or type `/orc analyzer`. The link is selected automatically: press **Ctrl+C**, then paste it into your browser. This works without opening the Auction House or running a scan.
+
 ## Reports, PDFs and backups
 
 - **Player reports** lists only the selected player's recorded consumables.
@@ -116,6 +118,7 @@ Browser history is local to the browser and analyzer address. To move reports fr
 | --- | --- |
 | `/orc` | Open or close the window. |
 | `/orc help` | Show the commands in game chat. |
+| `/orc analyzer` | Show the web analyzer link for copying. |
 | `/orc scan` | Start an AH scan. |
 | `/orc stop` | Stop the current scan. |
 | `/orc export` | Export the current prices to TXT. |
@@ -146,7 +149,7 @@ If reset reports a file-writing failure, fix the problem and run `/orc reset` ag
 
 ## Navigate the analyzer
 
-Use **Overview** for raid totals, player rankings and spending composition. Click a player name in the ranking or complete breakdown to open **Players** with that player selected. Open **Players** for individual reports and PDF/TXT exports, **Prices** for quotations and manual prices, **Evidence** for ambiguous uses, and **History** for saved reports and backups. Filters and general exports remain available under **Filters & exports**.
+Use **Overview** for raid totals, player rankings and spending composition. Click anywhere on a player’s highlighted ranking row, or their name in the complete breakdown to open **Players** with that player selected. Open **Players** for individual reports and PDF/TXT exports, **Prices** for quotations and manual prices, **Evidence** for ambiguous uses, and **History** for saved reports and backups. Filters and general exports remain available under **Filters & exports**.
 
 NPC prices use base prices before reputation discounts. Enriched Manna Biscuit is valued at 12 silver each (five for 60 silver). Stratholme Holy Water uses a zero loot valuation; its uses remain counted. Mana Ruby uses appear separately from consumable spending. Simple Slingshot is consumed on use and is valued per unit using its AH quotation. Update the addon and run a new AH scan to collect prices for newly added tradeable items.
 
@@ -181,3 +184,7 @@ Item artwork is bundled from the [OctoWoW database](https://octowow.st/db/), wit
 Public Chronicle instance metadata and consumable payloads are cached locally for up to seven days, keyed by instance ID. Reparsed raids have a new ID. Prices, manual overrides and review decisions are not part of this cache. If browser storage is unavailable, raids load normally over the network. Clear site data in your browser to remove the cache; this also removes local settings and saved reports.
 
 For **Restore Mana (#17531)** casts with a recorded use time and exactly **Major Mana Potion / Diet McWeaksauce** as compatible candidates, ORC prefers Major Mana Potion as an estimate. The Evidence page explains this preference and retains both candidates. It does not establish which item was actually used. Direct item IDs take priority; other ambiguous effects and already-active buffs do not use this preference. Manual review can replace or exclude the estimate.
+
+For **Healing Potion (#17534)** with exactly **Major Healing Potion / The McWeaksauce Classic** as compatible candidates, the same timestamped cast/out-of-combat preference selects Major Healing Potion as an estimate. Cast and healing evidence for one use do not count as two uses. Direct item IDs and manual review retain priority.
+
+**Summon Holy Mount Visual (#31726)** is shared by mount/cosmetic actions and does not establish consumable use. Visual-only evidence is excluded from spending and the review queue; raw evidence remains available. A bandage buff received by a player does not prove that player consumed the bandage: without their own recorded cast/use it remains uncounted until reviewed.

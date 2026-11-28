@@ -13,6 +13,11 @@ const ORC = (()=>{
  };
  function trackingPolicy(row){
   if(ignoredItems[row.item])return {only:true,ignored:true,label:'Ignored actions',reason:ignoredItems[row.item]};
+  const evidence=row.evidence||[];
+  const holyVisual=row.effectSpellId===31726||evidence.some(e=>e.spellId===31726)||/^summon holy mount visual$/i.test(row.effectName||row.name||'');
+  const differentSpell=evidence.some(e=>e.spellId&&e.spellId!==31726);
+  const separateDirectUse=row.item>0&&(row.itemSource==='recorded'||row.status==='observed')&&evidence.some(e=>e.kind===1&&e.spellId!==31726);
+  if(holyVisual&&!differentSpell&&!separateDirectUse)return {only:true,ignored:true,label:'Cosmetic visuals',reason:'Shared mount/cosmetic visual; not evidence of a raid consumable use'};
   const names=[row.name||'',...(row.evidence||[]).map(e=>e.spell||'')];
   if(names.some(n=>/^add companion to collection[.!]?$/i.test(n)))return {only:true,ignored:true,label:'Ignored actions',reason:'Companion collection action; not a raid consumable'};
   if(names.some(n=>/^innervate(?:\s*\(rank \d+\))?$/i.test(n)))return {only:true,label:'Class abilities',reason:'Class ability; no purchased consumable cost'};
