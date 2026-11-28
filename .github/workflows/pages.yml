@@ -44,7 +44,7 @@ jobs:
         run: |
           mkdir -p _site/analyzer
           cp index.html .nojekyll Catalog.lua Recipes.lua ItemNames.lua _site/
-          cp analyzer/*.js analyzer/*.html analyzer/*.css analyzer/ICONS.md _site/analyzer/
+          cp analyzer/*.js analyzer/*.html analyzer/*.css analyzer/*.svg analyzer/*.png analyzer/ICONS.md _site/analyzer/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

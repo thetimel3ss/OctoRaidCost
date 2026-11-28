@@ -6,7 +6,7 @@ Items: [OctoWoW database](https://octowow.st/db/). Icon names were resolved from
 
 Classes: Wowhead/ZAM. Matching class icon paths were unavailable on the Octo database.
 
-The neutral bag and ORC shield/statistics mark are original SVG drawings used by ORC. The bag is decorative and indicates missing artwork, not uncertainty about item identity.
+The neutral bag and ORC shield/statistics mark are original SVG drawings used by ORC. The tab favicon reuses that shield on a dark background, as SVG with a 32×32 PNG fallback. The bag is decorative and indicates missing artwork, not uncertainty about item identity.
 
 ## Class sources
 

@@ -30,13 +30,13 @@ function quotationDetails(row){
  return '<details class="quotation-details"><summary>Price calculation</summary><p>'+esc(q.source)+'</p>'+
   (q.value===null?'<p>Unknown: not included in spending. Recorded uses are retained.</p>':'<p>Whole item: '+priceGold(q.value)+' · Applications: '+applications+' · Per use: '+priceGold(q.value/applications)+'</p>')+
   (outside?'<p>Outside catalog: not searched by the addon. Review identity and application count before assigning a manual price.</p>':'')+
-  (age===null?'':'<p class="'+(age>7?'unknown':'')+'">'+(q.kind==='recipe'?'Oldest quoted ingredient':'Quotation')+': '+age.toFixed(1)+' days since capture.'+(age>7?' Run a new scan.':'')+'</p>')+partsHtml(q)+'</details>';
+  (age===null?'':'<p class="'+(age>PRICE_RESCAN_DAYS?'unknown':'')+'">'+(q.kind==='recipe'?'Oldest quoted ingredient':'Quotation')+': '+age.toFixed(1)+' days since capture.'+(age>PRICE_RESCAN_DAYS?' Run a new scan.':'')+'</p>')+partsHtml(q)+'</details>';
 }
 function priceStatus(row,q){
  const outside=!Object.hasOwn(catalog,String(row.item)),age=ORC.priceAge(q);
  return (outside?'<span class="unknown">Outside catalog</span> · ':'')+
   (q.value===null?(outside?'Price missing · ':'Identified · price missing: '):'')+esc(q.source)+
-  (age!==null&&age>7?'<br><span class="unknown">Old quotation: '+age.toFixed(1)+' days · rescan recommended</span>':'')+quotationDetails(row);
+  (age!==null&&age>PRICE_RESCAN_DAYS?'<br><span class="unknown">Old quotation: '+age.toFixed(1)+' days · rescan recommended</span>':'')+quotationDetails(row);
 }
 function priceImportMessage(db,prefix){return db.reset===true?'Price TXT was cleared with /orc reset. Run a new scan or import Aux in game.':prefix;}
 function initializeRaid(){
@@ -47,22 +47,25 @@ function initializeRaid(){
  if(legacy)$('message').textContent='Legacy report: reload the Chronicle link for evidence details and encounter/time filters.';
 }
 function priceInfo(){
- const age=scan.startedAt?(Date.now()/1000-scan.startedAt)/86400:null;
+ const age=priceScanAge(scan);
  const mismatch=raid&&scan.realm&&raid.realm!==scan.realm;
+ const stale=age!==null&&age>PRICE_RESCAN_DAYS&&scan.status!=='reset'&&Object.keys(scan.prices||{}).length>0;
+ $('priceAgeWarning').hidden=!stale;
+ if(stale){const text='Captured '+new Date(scan.startedAt*1000).toLocaleString()+' ('+age.toFixed(1)+' days ago). Run a new Auction House scan with /orc, wait for Complete, then load the updated TXT from CustomData. You can continue analyzing with the current prices.';if($('priceAgeDetails').textContent!==text)$('priceAgeDetails').textContent=text;}
  const allQuotes=Object.values(scan.prices||{}),priced=allQuotes.filter(q=>['copper','medianCopper','historicalCopper'].some(k=>ORC.validPrice(q[k]))).length;
- $('priceInfo').className=age!==null&&age>7?'unknown':'';
+ $('priceInfo').className=age!==null&&age>PRICE_RESCAN_DAYS?'unknown':'';
  if(scan.status==='reset'){$('priceInfo').textContent=scan.realm+' · Price TXT cleared. Run a new scan or import Aux in game.';return;}
- $('priceInfo').textContent=`${scan.realm||'No scan'} · ${scan.source||'AH scan'}${scan.scanMode==='smart'?' · Smart scan (automatic ingredient fallback)':scan.scanMode==='quick'?' · Quick scan (legacy, consumables only)':scan.scanMode==='full'?' · Full scan (consumables + ingredients)':''}${scan.scanMode==='smart'&&scan.scanPhase==='ingredients'?' · Ingredients phase':scan.scanMode==='smart'&&scan.scanPhase==='consumables'?' · Consumables phase':''} · ${scan.status||'unknown status'} · ${priced}/${allQuotes.length} items have quotations · ${age===null?'Price age unknown':age.toFixed(1)+' days since capture'}${age!==null&&age>7?' · Old prices: run a new scan':''}${mismatch?' · Realm mismatch: quotations excluded':''}. Aux capture time is not the age of its historical market observations.`;
+ $('priceInfo').textContent=`${scan.realm||'No scan'} · ${scan.source||'AH scan'}${scan.scanMode==='smart'?' · Smart scan (automatic ingredient fallback)':scan.scanMode==='quick'?' · Quick scan (legacy, consumables only)':scan.scanMode==='full'?' · Full scan (consumables + ingredients)':''}${scan.scanMode==='smart'&&scan.scanPhase==='ingredients'?' · Ingredients phase':scan.scanMode==='smart'&&scan.scanPhase==='consumables'?' · Consumables phase':''} · ${scan.status||'unknown status'} · ${priced}/${allQuotes.length} items have quotations · ${age===null?'Price age unknown':age.toFixed(1)+' days since capture'}${age!==null&&age>PRICE_RESCAN_DAYS?' · Old prices: run a new scan':''}${mismatch?' · Realm mismatch: quotations excluded':''}. Aux capture time is not the age of its historical market observations.`;
 }
 function statusLabel(status){return {observed:'Direct item evidence',inferred:'Effect-derived',active:'Already active',ambiguous:'Multiple / conflicting items',recovery:'Generic food / drink',reviewed:'Manually reviewed',excluded:'Excluded'}[status]||status;}
 function itemName(id,fallback){return catalog[id]?.name||itemNames[id]||fallback||'Item '+id;}
-function filterDescription(){
+function filterDescription(includeActiveState=true){
  const f=filters(),labels=[];
  if(f.encounter)labels.push((raid.encounters||[]).find(e=>e.id===f.encounter)?.name||'Selected encounter');
  if(f.segment)labels.push('Segment: '+f.segment);if(f.category)labels.push('Category: '+f.category);
  if(f.start!=='')labels.push('From minute '+f.start);if(f.end!=='')labels.push('To minute '+f.end);
  if(f.mode!=='all')labels.push(f.mode==='flask'?'Flasks only':'No direct flask use');if(f.search)labels.push('Player: '+f.search);
- return (labels.length?labels.join(' · '):'Full raid, including recorded pre-pull uses')+(f.includeActive?' · Initial already-active estimates enabled':'');
+ return (labels.length?labels.join(' · '):'Full raid, including recorded pre-pull uses')+(includeActiveState&&f.includeActive?' · Initial already-active estimates enabled':'');
 }
 function playerReportLink(total){
  return '<button type="button" class="player-report-link" data-player-report="'+esc(total.player)+'" aria-label="'+esc('Open report for '+total.name)+'">'+esc(total.name)+'</button>';
@@ -85,7 +88,7 @@ function render(){
  const categories={};for(const r of rs){const c=categories[r.category]??={observed:0,estimated:0,missing:0};const p=ORC.perUse(r,context).value;if(p===null)c.missing+=r.quantity;else c[r.status==='observed'?'observed':'estimated']+=p*r.quantity;}
  $('categories').innerHTML=table(['Category','Observed','Estimated','Unpriced uses'],Object.entries(categories).map(([c,v])=>[esc(c),gold(v.observed),gold(v.estimated),v.missing]));
  const items=[...new Map(rs.map(r=>[r.item,r])).values()].sort((a,b)=>a.name.localeCompare(b.name));
- const shownItems=items.filter(r=>{const mode=$('priceView').value,q=ORC.unit(r,context);return mode==='missing'?q.value===null:mode==='outside'?!Object.hasOwn(catalog,String(r.item)):mode==='old'?(ORC.priceAge(q)??0)>7:true;});
+ const shownItems=items.filter(r=>{const mode=$('priceView').value,q=ORC.unit(r,context);return mode==='missing'?q.value===null:mode==='outside'?!Object.hasOwn(catalog,String(r.item)):mode==='old'?(ORC.priceAge(q)??0)>PRICE_RESCAN_DAYS:true;});
  $('items').innerHTML=table(['Item','ID','Quoted whole-item gold','Manual override','Charges','Price status / source','Identified uses'],shownItems.map(r=>{const q=ORC.unit(r,context);return ['<span class="report-item">'+reportItemIcon(r.item)+esc(r.name)+'</span>',r.item,q.value===null?'<span class="unknown">Unknown</span>':gold(q.value),quoteInput(r.item,r.name,ORC.free(r)),`<input class="price" type="number" min="1" max="10000" step="1" data-charges="${r.item}" aria-label="Applications per item for ${esc(r.name)}" placeholder="${r.charges||catalog[r.item]?.charges||1}" value="${charges[r.item]||''}">`,priceStatus(r,q),rs.filter(x=>x.item===r.item).reduce((s,x)=>s+x.quantity,0)];}));
  $('ingredients').innerHTML=table(['Ingredient','ID','Quoted gold','Price status / source','Manual override'],Object.entries(catalog).filter(([,v])=>v.ingredient).map(([i,v])=>{const q=ORC.quote(i,context);return ['<span class="report-item">'+reportItemIcon(i)+esc(v.name)+'</span>',i,q.value===null?'Unknown':gold(q.value),priceStatus({item:Number(i),name:v.name},q),quoteInput(i,v.name)];}));
  const selectedPlayer=$('playerDetail').value;
@@ -122,8 +125,8 @@ function reportFacts(total){
  return {items,usage,className:raid.players[total.player].class||'Unknown',pending:result.rows.filter(r=>r.player===total.player&&ORC.needsReview(r)).length,unpriced:items.reduce((n,r)=>n+r.missing,0)};
 }
 function reportContext(){return [raid.name,raid.realm,raid.start?new Date(raid.start).toLocaleDateString():''].filter(Boolean).map(esc).join(' · ');}
-function reportScope(){return filterDescription()+' · '+(filters().includeEstimates?'Direct + eligible estimates':'Direct item evidence only');}
-function activeScopeNote(){return filters().includeActive&&filters().includeEstimates?'Includes one initial already-active estimate per player/item when not covered by a recorded use; exact use time unknown.':'Already-active effects add no cost under the selected options.';}
+function reportScope(){const f=filters();return filterDescription(false)+' · '+(f.includeEstimates?'Direct + eligible estimates':'Direct item evidence only')+' · Already-active: '+(f.includeActive&&f.includeEstimates?'included as initial estimates':f.includeActive?'excluded by value basis':'excluded');}
+function activeScopeNote(){return filters().includeActive&&filters().includeEstimates?'Includes one initial already-active estimate per player/item when not covered by a recorded use; exact use time unknown.':'Already-active observations add no initial uses or costs. Recorded uses of the same item remain included.';}
 function reportBrand(){return '<div class="print-brand"><svg viewBox="0 0 36 40" aria-hidden="true"><path d="M18 2 33 8v12c0 8-7 14-15 18C10 34 3 28 3 20V8Z M10 24v-9m8 9V10m8 14v-5"/></svg><div>ORC<small>OCTO RAID COST</small></div></div>';}
 function reportHeader(label){return '<div class="print-masthead">'+reportBrand()+'<span>'+label+'</span></div>';}
 function reportFooter(){return '<footer class="print-footer"><span>ORC · RAID CONSUMABLE REPORT</span><a href="https://octo.chronicleclassic.com/instances/'+encodeURIComponent(raid.slug)+'">Raid data provided by Chronicle ↗</a></footer>';}

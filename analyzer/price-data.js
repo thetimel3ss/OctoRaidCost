@@ -22,3 +22,10 @@ function parsePrices(text){
  if(text.startsWith('{')){const db=JSON.parse(text);if(db.format!=='OctoRaidCostPrices'||db.version!==1)throw Error('Select an OctoRaidCost price export, not a Chronicle log');return validatePrices(db);}
  throw Error('Select the OctoRaidCost TXT export from CustomData. SavedVariables Lua files are not supported.');
 }
+
+const PRICE_RESCAN_DAYS=3;
+function priceScanAge(snapshot,now=Date.now()){
+ const captured=snapshot?.startedAt;
+ if(!Number.isFinite(captured)||captured<=0||captured*1000>now)return null;
+ return (now/1000-captured)/86400;
+}

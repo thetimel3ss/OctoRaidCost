@@ -193,8 +193,14 @@ For **Healing Potion (#17534)** with exactly **Major Healing Potion / The McWeak
 
 **Include already-active consumables** under **Filters & exports** is off by default. With **Direct + eligible estimates**, it can add one estimated initial use per player/item when an already-active effect uniquely identifies the item. Repeated pull snapshots do not add more uses. A recorded use before or around the first observation prevents an additional initial estimate; later recorded reuses still count. Manual decisions take priority. Unknown prices remain unpriced.
 
-Identified already-active consumables no longer require an identity review. They remain visible in **Already active** evidence. Ambiguous effects and received bandage effects retain their existing review protections. Reports mark included initial uses as **already active**; TXT uses **A** in the evidence column. The filter uses the first observation time for these estimates, because the actual consumption time is unknown. Report backups retain the option; older backups restore it as disabled.
+Identified already-active consumables no longer require an identity review. They remain visible in **Already active** evidence. Ambiguous effects and received bandage effects retain their existing review protections. All PDF layouts and TXT exports explicitly state **Already-active: included/excluded** in their scope. Excluded active observations add no initial uses or costs; recorded uses of the same item remain included. Reports mark included initial uses as **already active**; TXT uses **A** in the evidence column. The filter uses the first observation time for these estimates, because the actual consumption time is unknown. Report backups retain the option; older backups restore it as disabled.
 
 **Compact player cards** is the default PDF layout. Selected-player PDF/TXT actions sit together; all-player actions sit below the report dropdowns. Your layout selection is remembered locally.
 
 Boss-summoning actions such as **Extinguish / Gurubashi Mojo Madness (#19931)** and Mudskunk Lure remain outside personal consumable spending and quotation/review queues. Their raw evidence is retained.
+
+### Old price exports
+
+If the selected price scan is more than three days old, an informational warning appears below the raid/TXT loading panel, before the filters, in every view. It shows the capture date and recommends a new AH scan with `/orc`, followed by loading the updated TXT from `CustomData`. There are no warning buttons and analysis remains available with the current prices. The warning disappears when a recent scan is selected or imported.
+
+Age is measured from the capture timestamp inside the TXT, not the file's modification date. Raid dates and analyzer versions do not affect this warning; older snapshots may still be used for historical reports. An unknown capture date remains labeled as unknown. A fresh Aux import does not prove its historical market observations are recent.

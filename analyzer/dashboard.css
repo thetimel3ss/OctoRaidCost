@@ -36,3 +36,8 @@
  @media(max-width:1150px){.player-report-controls{grid-template-columns:repeat(2,minmax(0,1fr))}.player-export-actions{grid-column:1 / 3;justify-self:start}}
  @media(max-width:520px){.player-report-controls{grid-template-columns:minmax(0,1fr)}.player-export-actions,.all-export-actions{grid-column:1;width:100%}}
 }
+
+@media screen{
+ .price-age-warning{padding:16px 20px;margin:0 0 18px;border:1px solid #8d713e;border-left:3px solid #d9b871;border-radius:7px;background:#332c1d66}
+ .price-age-warning[hidden]{display:none!important}.price-age-warning h2{margin:0 0 7px;font-size:13px;color:#e4c485}.price-age-warning p{margin:0;font-size:11px;line-height:1.7;color:#bfb39b}
+}
