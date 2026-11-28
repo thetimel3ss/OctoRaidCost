@@ -1,5 +1,6 @@
 -- Supplemental Chronicle candidate names. Use literal tables only.
 OctoRaidCostItemNames = {
+  [19931] = "Gurubashi Mojo Madness",
   [2459] = "Swiftness Potion",
   [2594] = "Flagon of Mead",
   [2595] = "Jug of Bourbon",

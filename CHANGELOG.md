@@ -2,8 +2,11 @@
 
 ## 0.8.1 — 2026-11-28
 
+- Excluded Extinguish / Gurubashi Mojo Madness boss-summoning evidence from personal consumable spending and quotation/review queues.
+- Grouped selected-player PDF/TXT actions together, placed all-player actions below the selectors and made compact cards the default saved PDF layout.
+- Added optional initial already-active estimates with per-player/item deduplication, recorded-use and manual-decision precedence, report annotations and saved report settings.
+- Removed uniquely identified already-active consumables from identity review while retaining ambiguous and received-bandage protections.
 - Made entire Overview spending rows clickable, with hover highlighting and native keyboard navigation.
-
 - Preferred Major Healing Potion as an explicit estimate for timestamped Healing Potion #17534 casts with exactly Major Healing Potion and The McWeaksauce Classic as compatible candidates.
 - Excluded isolated Summon Holy Mount Visual #31726 evidence from consumable spending and review queues while retaining direct consumable evidence and raw observations.
 - Clarified received-bandage evidence without assigning the recipient an automatic consumable cost.

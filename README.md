@@ -188,3 +188,13 @@ For **Restore Mana (#17531)** casts with a recorded use time and exactly **Major
 For **Healing Potion (#17534)** with exactly **Major Healing Potion / The McWeaksauce Classic** as compatible candidates, the same timestamped cast/out-of-combat preference selects Major Healing Potion as an estimate. Cast and healing evidence for one use do not count as two uses. Direct item IDs and manual review retain priority.
 
 **Summon Holy Mount Visual (#31726)** is shared by mount/cosmetic actions and does not establish consumable use. Visual-only evidence is excluded from spending and the review queue; raw evidence remains available. A bandage buff received by a player does not prove that player consumed the bandage: without their own recorded cast/use it remains uncounted until reviewed.
+
+### Already-active consumables
+
+**Include already-active consumables** under **Filters & exports** is off by default. With **Direct + eligible estimates**, it can add one estimated initial use per player/item when an already-active effect uniquely identifies the item. Repeated pull snapshots do not add more uses. A recorded use before or around the first observation prevents an additional initial estimate; later recorded reuses still count. Manual decisions take priority. Unknown prices remain unpriced.
+
+Identified already-active consumables no longer require an identity review. They remain visible in **Already active** evidence. Ambiguous effects and received bandage effects retain their existing review protections. Reports mark included initial uses as **already active**; TXT uses **A** in the evidence column. The filter uses the first observation time for these estimates, because the actual consumption time is unknown. Report backups retain the option; older backups restore it as disabled.
+
+**Compact player cards** is the default PDF layout. Selected-player PDF/TXT actions sit together; all-player actions sit below the report dropdowns. Your layout selection is remembered locally.
+
+Boss-summoning actions such as **Extinguish / Gurubashi Mojo Madness (#19931)** and Mudskunk Lure remain outside personal consumable spending and quotation/review queues. Their raw evidence is retained.
